@@ -58,12 +58,12 @@ def process_movie(file_path='', alg='cv'):
             img_hsv = cv2.resize(img_hsv, dim, interpolation=cv2.INTER_AREA)
         
         img_hsv = img_hsv.reshape(img_hsv.shape[0]*img_hsv.shape[1], img_hsv.shape[2])
-        if alg=='cv':
-            list_centers.append(get_kmeans_cv(img_hsv, 3))
-        elif alg=='cuda':
-            list_centers.append(get_kmeans_cuda(img_hsv, 3))
-        elif alg=='sklearn':
-            list_centers.append(get_kmeans(img_hsv, 3))
+#        if alg=='cv':
+        list_centers.append(get_kmeans_cv(img_hsv, 3))
+#        elif alg=='cuda':
+#            list_centers.append(get_kmeans_cuda(img_hsv, 3))
+#        elif alg=='sklearn':
+#            list_centers.append(get_kmeans(img_hsv, 3))
         print(cnt_total/n_imgs*100)
     cap.release()
     pickle.dump(list_centers, open('data.p','wb'))
