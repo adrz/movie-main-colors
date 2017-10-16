@@ -9,12 +9,12 @@ from sklearn.cluster import KMeans
 import scipy
 import pickle
 
-def get_kmeans(img=img, n_clusters=3, n_jobs=8):
+def get_kmeans(img, n_clusters=3, n_jobs=8):
     model = KMeans(n_clusters=n_clusters, n_jobs=n_jobs, max_iter=20)
     model.fit_predict(img)
     return model.cluster_centers_
 
-def get_kmeans_cv(img=img):
+def get_kmeans_cv(img):
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
     flags = cv2.KMEANS_RANDOM_CENTERS
     compactness,labels,centers = cv2.kmeans(np.float32(img),3,None,criteria,10,flags)
