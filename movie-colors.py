@@ -14,10 +14,12 @@ def get_kmeans(img, n_clusters=3, n_jobs=8):
     model.fit_predict(img)
     return model.cluster_centers_
 
-def get_kmeans_cv(img):
+def get_kmeans_cv(img, n_clusters=3):
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
     flags = cv2.KMEANS_RANDOM_CENTERS
-    compactness,labels,centers = cv2.kmeans(np.float32(img),3,None,criteria,10,flags)
+    compactness,labels,centers = cv2.kmeans(np.float32(img), \
+                                            n_clusters, None,\
+                                            criteria,10,flags)
     return centers
 
 
