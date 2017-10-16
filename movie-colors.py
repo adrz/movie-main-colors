@@ -4,6 +4,7 @@
 import cv2
 import numpy as np
 import sys
+import argparse
 
 def process_movie(file_path=''):
     '''
