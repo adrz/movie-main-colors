@@ -8,6 +8,7 @@ import argparse
 from sklearn.cluster import KMeans
 import scipy
 import pickle
+from libKMCUDA import kmeans_cuda
 
 def get_kmeans(img, n_clusters=3, n_jobs=8):
     model = KMeans(n_clusters=n_clusters, n_jobs=n_jobs, max_iter=20)
@@ -23,6 +24,14 @@ def get_kmeans_cv(img, n_clusters=3):
     return centers
 
 
+def get_kmeans_cuda(img, n_clusters=3):
+#    centroids, assignments, avg_distance = kmeans_cuda(
+    #    arr, 4, metric="cos", verbosity=1, seed=3, average_distance=True)
+    centroids, assignments = kmeans_cuda(np.float32(img), n_clusters, verbosity=1, yinyang_t=0)
+    return centroids
+
+
+
 def process_movie(file_path=''):
     '''
     Process movie file
@@ -35,13 +44,16 @@ def process_movie(file_path=''):
     while cap.isOpened():
         while cnt%10:
             success, img = cap.read()
+            if success==False:
+                break
             cnt+=1
             cnt_total+=1
         cnt=1
         img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         img_hsv = scipy.misc.imresize(img_hsv, .1)
         img_hsv = img_hsv.reshape(img_hsv.shape[0]*img_hsv.shape[1], img_hsv.shape[2])
-        list_centers.append(get_kmeans_cv(img_hsv, 3))
+#        list_centers.append(get_kmeans_cv(img_hsv, 3))
+        list_centers.append(get_kmeans_cuda(img_hsv, 3))
         print(cnt_total/n_imgs*100)
     cap.release()
     pickle.dump(list_centers, open('data.p','wb'))
