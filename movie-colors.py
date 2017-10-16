@@ -31,9 +31,9 @@ def main(argv):
                         help="image output",
                         default='output.pdf')
     args = parser.parse_args()
-
+    process_movie(file_path=args.input_file)
     # args.input_file
-    df = pickle.load(open(args.input_file, 'rb'))
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
