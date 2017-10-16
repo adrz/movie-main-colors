@@ -3,6 +3,7 @@
 
 import cv2
 import numpy as np
+import sys
 
 def process_movie(file_path=''):
     '''
