@@ -24,7 +24,7 @@ def process_movie(file_path=''):
         success, img = cap.read()
         img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         img_hsv = img.reshape(img.shape[0]*img.shape[1], img.shape[2])
-        list_centers+=get_kmeans(img_hsv, 3, 6)
+        list_centers.append(get_kmeans(img_hsv, 3, 6))
         cnt+=1
         if cnt>1000:
             break
