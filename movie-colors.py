@@ -20,7 +20,6 @@ def get_kmeans_cv(img):
     compactness,labels,centers = cv2.kmeans(np.float32(img),3,None,criteria,10,flags)
     return centers
 
-print('t1: %f ; t2: %f'%(a2-a1,b2-b1))
 
 def process_movie(file_path=''):
     '''
