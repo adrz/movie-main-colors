@@ -27,12 +27,12 @@ def get_kmeans_cv(img, n_clusters=3):
 def get_kmeans_cuda(img, n_clusters=3):
 #    centroids, assignments, avg_distance = kmeans_cuda(
     #    arr, 4, metric="cos", verbosity=1, seed=3, average_distance=True)
-    centroids, assignments = kmeans_cuda(np.float32(img), n_clusters, verbosity=1, yinyang_t=0)
+    centroids, assignments = kmeans_cuda(np.float32(img), n_clusters, verbosity=0, yinyang_t=0)
     return centroids
 
 
 
-def process_movie(file_path=''):
+def process_movie(file_path='', alg='cv'):
     '''
     Process movie file
     '''
@@ -52,8 +52,13 @@ def process_movie(file_path=''):
         img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         img_hsv = scipy.misc.imresize(img_hsv, .1)
         img_hsv = img_hsv.reshape(img_hsv.shape[0]*img_hsv.shape[1], img_hsv.shape[2])
-#        list_centers.append(get_kmeans_cv(img_hsv, 3))
-        list_centers.append(get_kmeans_cuda(img_hsv, 3))
+        #        list_centers.append(get_kmeans_cv(img_hsv, 3))
+        if alg=='cv':
+            list_centers.append(get_kmeans_cv(img_hsv, 3))
+        elif alg=='cuda':
+            list_centers.append(get_kmeans_cuda(img_hsv, 3))
+        elif alg=='sklearn':
+            list_centers.append(get_kmeans(img_hsv, 3))
         print(cnt_total/n_imgs*100)
     cap.release()
     pickle.dump(list_centers, open('data.p','wb'))
@@ -63,11 +68,14 @@ def main(argv):
     parser.add_argument('-i', '--input_file',
                         help="input movie file",
                         default="movie.mp4")
+    parser.add_argument('-a', '--alg',
+                        help="kmeans implementation choice: sklearn, cv, cuda",
+                        default="cv")
     parser.add_argument('-o', '--output_file',
                         help="image output",
                         default='output.pdf')
     args = parser.parse_args()
-    process_movie(file_path=args.input_file)
+    process_movie(file_path=args.input_file, alg=args.alg)
     # args.input_file
 
 
