@@ -51,7 +51,7 @@ def process_movie(file_path='', alg='cv'):
         cnt=1
         img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         r = .1
-        dim = (int(img.shape[1]*r), int(image.shape[0] * r))
+        dim = (int(img_hsv.shape[1]*r), int(img_hsv.shape[0] * r))
         if alg=='cv':
             img_hsv = scipy.misc.imresize(img_hsv, r)
         else:
