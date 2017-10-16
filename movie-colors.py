@@ -24,8 +24,8 @@ def process_movie(file_path=''):
     while cap.isOpened():
         success, img = cap.read()
         img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        img_hsv = img.reshape(img.shape[0]*img.shape[1], img.shape[2])
         img_hsv = scipy.misc.imresize(img_hsv, .1)
+        img_hsv = img_hsv.reshape(img_hsv.shape[0]*img_hsv.shape[1], img_hsv.shape[2])
         list_centers.append(get_kmeans(img_hsv, 3, 6))
         cnt+=1
         print(cnt)
