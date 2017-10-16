@@ -10,7 +10,7 @@ import scipy
 import pickle
 
 def get_kmeans(img=img, n_clusters=3, n_jobs=8):
-    model = KMeans(n_clusters=n_clusters, n_jobs=n_jobs, max_iter=10)
+    model = KMeans(n_clusters=n_clusters, n_jobs=n_jobs, max_iter=20)
     model.fit_predict(img)
     return model.cluster_centers_
 
@@ -19,15 +19,6 @@ def get_kmeans_cv(img=img):
     flags = cv2.KMEANS_RANDOM_CENTERS
     compactness,labels,centers = cv2.kmeans(np.float32(img),3,None,criteria,10,flags)
     return centers
-
-import time
-a1 = time.time()
-r1 = get_kmeans()
-a2 = time.time()
-
-b1 = time.time()
-r2 = get_kmeans_cv()
-b2 = time.time()
 
 print('t1: %f ; t2: %f'%(a2-a1,b2-b1))
 
@@ -49,10 +40,8 @@ def process_movie(file_path=''):
         img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         img_hsv = scipy.misc.imresize(img_hsv, .1)
         img_hsv = img_hsv.reshape(img_hsv.shape[0]*img_hsv.shape[1], img_hsv.shape[2])
-        list_centers.append(get_kmeans(img_hsv, 3, 6))
+        list_centers.append(get_kmeans_cv(img_hsv, 3, 6))
         print(cnt_total/n_imgs*100)
-        if cnt>1000:
-            break
     cap.release()
     pickle.dump(list_centers, open('data.p','wb'))
 
