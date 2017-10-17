@@ -10,7 +10,7 @@ import pickle
 from libKMCUDA import kmeans_cuda
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
-
+from sklearn.mixture import GaussianMixture
 
 hash_colorspace = {'hsv': [cv2.COLOR_BGR2HSV, cv2.COLOR_HSV2RGB],
                    'luv': [cv2.COLOR_BGR2LUV, cv2.COLOR_LUV2RGB],
@@ -37,10 +37,14 @@ def get_kmeans_cv(img, n_clusters=3):
                                             criteria,10,flags)
     return centers
 
+def get_gaussian(img, n_clusters=3):
+    model = GaussianMixture(n_components=n_clusters)
+    model.fit(img)
+    return model.means_
 
 def get_kmeans_cuda(img, n_clusters=3):
     centroids, assignments = kmeans_cuda(np.float32(img), n_clusters, \
-                                         verbosity=0, yinyang_t=0,metric='cos')
+                                         verbosity=0, metric="cos")
     return centroids
  
     
@@ -113,6 +117,8 @@ def process_movie(file_path='', alg='cv', \
             centers = get_kmeans_cuda(img_hsv, 3)
         elif alg=='sklearn':
             centers = get_kmeans(img_hsv, 3)
+        elif alg=='gaussian':
+            centers = get_gaussian(img_hsv, 3)
         print(cnt_total/n_imgs*100)
         centers = scaler.inverse_transform(centers)    
         list_centers.append(centers)
@@ -125,7 +131,7 @@ def main(argv):
                         help="input movie file",
                         default="movie.mp4")
     parser.add_argument('-a', '--alg',
-                        help="kmeans implementation choice: sklearn, cv, cuda",
+                        help="kmeans implementation choice: sklearn, cv, cuda, gaussian",
                         default="cv")
     parser.add_argument('-c', '--colorspace',
                         help="colorspace to compute clusters (hsv/hls/luv)",
