@@ -11,8 +11,16 @@ from libKMCUDA import kmeans_cuda
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 
-def make_pie(sizes, colors, radius=1):
-    col = [[i/255 for i in c] for c in colors]
+
+hash_colorspace = {'hsv': [cv2.COLOR_BGR2HSV, cv2.COLOR_HSV2RGB],
+                   'luv': [cv2.COLOR_BGR2LUV, cv2.COLOR_LUV2RGB],
+                   'hls': [cv2.COLOR_BGR2HLS, cv2.COLOR_HLS2RGB],
+                   'xyz': [cv2.COLOR_BGR2XYZ, cv2.COLOR_XYZ2RGB],
+                   'lab': [cv2.COLOR_BGR2LAB, cv2.COLOR_LAB2RGB],
+}
+
+def make_pie(sizes, cols, radius=1):
+    col = [[i/255 for i in c] for c in cols]
     plt.axis('equal')
     outside, _ = plt.pie(sizes, counterclock=False, radius=radius, colors=col, startangle=90)
 
@@ -31,11 +39,12 @@ def get_kmeans_cv(img, n_clusters=3):
 
 
 def get_kmeans_cuda(img, n_clusters=3):
-    centroids, assignments = kmeans_cuda(np.float32(img), n_clusters, verbosity=0, yinyang_t=0)
+    centroids, assignments = kmeans_cuda(np.float32(img), n_clusters, \
+                                         verbosity=0, yinyang_t=0,metric='cos')
     return centroids
  
     
-def hsv_to_rgb(center, colorspace):
+def hsv_to_rgb(center, colorspace='luv'):
     if colorspace=='hsv':
         return cv2.cvtColor(np.uint8([center]), cv2.COLOR_HSV2RGB)
     elif colorspace=='luv':
@@ -136,12 +145,3 @@ if __name__ == "__main__":
     main(sys.argv[1:])
 
 
-
-
-
-hash_colorspace = {'hsv': [cv2.BGR2HSV, cv2.HSV2RGB],
-                   'luv': [cv2.BGR2LUV, cv2.LUV2RGB],
-                   'hls': [cv2.BGR2HLS, cv2.HLS2RGB],
-                   'xyz': [cv2.BGR2XYZ, cv2.XYZ2RGB],
-                   'lab': [cv2.BGR2LAB, cv2.LAB2RGB],
-}
