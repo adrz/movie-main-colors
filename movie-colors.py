@@ -9,6 +9,13 @@ from sklearn.cluster import KMeans
 import pickle
 from libKMCUDA import kmeans_cuda
 
+
+def make_pie(sizes, colors, radius=1):
+    col = [[i/255 for i in c] for c in colors]
+
+    plt.axis('equal')
+    outside, _ = plt.pie(sizes, counterclock=False, radius=radius, colors=col, startangle=90)
+
 def get_kmeans(img, n_clusters=3, n_jobs=8):
     model = KMeans(n_clusters=n_clusters, n_jobs=n_jobs, max_iter=20)
     model.fit_predict(img)
@@ -27,9 +34,31 @@ def get_kmeans_cuda(img, n_clusters=3):
     centroids, assignments = kmeans_cuda(np.float32(img), n_clusters, verbosity=0, yinyang_t=0)
     return centroids
 
+def hsv_to_rgb(center):
+    return cv2.cvtColor(np.uint8([center]), cv2.COLOR_HSV2RGB)
+
+def get_donut_chart(centers_hsv):
+    centers_rgb = np.array(list(map(hsv_to_rgb, centers_hsv)))
+    c1 = list(centers_rgb[:,0,0,:])
+    c2 = list(centers_rgb[:,0,1,:])
+    c3 = list(centers_rgb[:,0,2,:])
+
+#    c1 = list(centers_rgb[:,0,:,0])
+#    c2 = list(centers_rgb[:,0,:,1])
+#    c3 = list(centers_rgb[:,0,:,2])
+
+    len_colors = len(c1)
+    e1 = (255, 255, 255)
+    make_pie([1]*len_colors, c1, radius=1.2)
+    make_pie([1]*len_colors, c2, radius=1)
+    make_pie([1]*len_colors, c3, radius=.8)
+    make_pie([1], [e1], radius=.6)
+    plt.show()
+
+    
 
 
-def process_movie(file_path='', alg='cv'):
+def process_movie(file_path='', alg='cv', output_file=''):
     '''
     Process movie file
     '''
@@ -60,7 +89,7 @@ def process_movie(file_path='', alg='cv'):
             list_centers.append(get_kmeans(img_hsv, 3))
         print(cnt_total/n_imgs*100)
     cap.release()
-    pickle.dump(list_centers, open('data.p','wb'))
+    pickle.dump(list_centers, open(output_file,'wb'))
 
 def main(argv):
     parser = argparse.ArgumentParser()
@@ -74,10 +103,17 @@ def main(argv):
                         help="image output",
                         default='output.pdf')
     args = parser.parse_args()
-    process_movie(file_path=args.input_file, alg=args.alg)
+    process_movie(file_path=args.input_file, alg=args.alg, output_file=args.output_file)
     # args.input_file
 
 
 if __name__ == "__main__":
     main(sys.argv[1:])
 
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+plt.show()
