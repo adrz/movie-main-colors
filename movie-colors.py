@@ -8,11 +8,11 @@ import argparse
 from sklearn.cluster import KMeans
 import pickle
 from libKMCUDA import kmeans_cuda
-
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
 
 def make_pie(sizes, colors, radius=1):
     col = [[i/255 for i in c] for c in colors]
-
     plt.axis('equal')
     outside, _ = plt.pie(sizes, counterclock=False, radius=radius, colors=col, startangle=90)
 
@@ -42,7 +42,7 @@ def hsv_to_rgb(center, colorspace):
         return cv2.cvtColor(np.uint8([center]), cv2.COLOR_LUV2RGB)
 
 def get_donut_chart(centers_hsv, colorspace=''):
-    centers_rgb = [hsv_to_rgb(x, colorspace) for x in centers_hsv]
+    centers_rgb = np.array([hsv_to_rgb(x, colorspace) for x in centers_hsv])
     c1 = list(centers_rgb[:,0,0,:])
     c2 = list(centers_rgb[:,0,1,:])
     c3 = list(centers_rgb[:,0,2,:])
@@ -63,7 +63,7 @@ def get_donut_chart(centers_hsv, colorspace=''):
 
 
 def process_movie(file_path='', alg='cv', \
-                  output_file='', colorspace=''):
+                  output_file='', colorspace='luv'):
     '''
     Process movie file
     '''
@@ -72,6 +72,11 @@ def process_movie(file_path='', alg='cv', \
     cnt_total = 0
     cnt = 1
     list_centers = []
+
+    ##
+    scaler = StandardScaler()
+    ##
+    
     while cap.isOpened():
         while cnt%10:
             success, img = cap.read()
@@ -89,13 +94,19 @@ def process_movie(file_path='', alg='cv', \
         dim = (int(img_hsv.shape[1]*r), int(img_hsv.shape[0] * r))
         img_hsv = cv2.resize(img_hsv, dim, interpolation=cv2.INTER_AREA)
         img_hsv = img_hsv.reshape(img_hsv.shape[0]*img_hsv.shape[1], img_hsv.shape[2])
+
+        scaler.fit(img_hsv)
+        img_hsv = scaler.transform(img_hsv)
+        
         if alg=='cv':
-            list_centers.append(get_kmeans_cv(img_hsv, 3))
+            centers = get_kmeans_cv(img_hsv, 3)
         elif alg=='cuda':
-            list_centers.append(get_kmeans_cuda(img_hsv, 3))
+            centers = get_kmeans_cuda(img_hsv, 3)
         elif alg=='sklearn':
-            list_centers.append(get_kmeans(img_hsv, 3))
+            centers = get_kmeans(img_hsv, 3)
         print(cnt_total/n_imgs*100)
+        centers = scaler.inverse_transform(centers)    
+        list_centers.append(centers)
     cap.release()
     pickle.dump(list_centers, open(output_file,'wb'))
 
@@ -126,8 +137,11 @@ if __name__ == "__main__":
 
 
 
-import matplotlib.pyplot as plt
-import numpy as np
 
 
-plt.show()
+hash_colorspace = {'hsv': [cv2.BGR2HSV, cv2.HSV2RGB],
+                   'luv': [cv2.BGR2LUV, cv2.LUV2RGB],
+                   'hls': [cv2.BGR2HLS, cv2.HLS2RGB],
+                   'xyz': [cv2.BGR2XYZ, cv2.XYZ2RGB],
+                   'lab': [cv2.BGR2LAB, cv2.LAB2RGB],
+}
