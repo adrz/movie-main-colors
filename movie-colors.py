@@ -217,6 +217,7 @@ def process_movie(file_path='', alg='cv', \
         centers = scaler.inverse_transform(centers)    
         list_centers.append(centers)
         list_prc.append(prc)
+    
     cap.release()
     pickle.dump({'centers': list_centers,
                  'prc': list_prc,
