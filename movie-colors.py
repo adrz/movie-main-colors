@@ -185,7 +185,7 @@ def process_movie(file_path='', alg='cv', \
     ##
     
     while cap.isOpened():
-        while cnt%10:
+        while cnt%100:
             success, img = cap.read()
             cnt+=1
             cnt_total+=1
