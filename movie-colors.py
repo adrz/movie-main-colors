@@ -204,7 +204,7 @@ def process_movie(file_path='', alg='cv', \
     cap.release()
     pickle.dump({'centers': list_centers,
                  'prc': prc,
-                 'colorspace', colorspace},
+                 'colorspace': colorspace},
                 open(output_file,'wb'))
 
 def main(argv):
