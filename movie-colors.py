@@ -234,7 +234,7 @@ def process_movie(file_path='', alg='cv', \
                  'prc': list_prc,
                  'colorspace': colorspace},
                 open('data_save.p','wb'))
-    polarchart(list_centers, prc)
+    polarchart(list_centers, list_prc)
     plt.savefig(output_file)
 
 
