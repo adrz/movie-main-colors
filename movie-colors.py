@@ -104,8 +104,12 @@ def get_donut_chart(centers_hsv, colorspace=''):
     plt.show()
 
 
-def polarchart(cols, prc):
-    prc_norm = [np.round(x/5) for x in prc]
+def polarchart(cols, prc, colorspace='luv'):
+    '''
+    polarchart for main colors in movie
+    '''
+    cols_rgb = np.array([color_to_rgb(x, colorspace) for x in cols])
+    prc_norm = [np.round(x*20) for x in prc]
     n_colors = len(prc[0])
     diff_norm = np.where( np.sum(prc_norm, 1) == 19 )[0]
     for ind in diff_norm:
@@ -116,14 +120,12 @@ def polarchart(cols, prc):
 
     prc_norm = np.uint8(prc_norm)
     list_colors = []
-    for p,c in zip(prc_norm,cols):
+    for p,c in zip(prc_norm,cols_rgb):
         cn = c[0]
         cc = [cn[0,:]]*p[0]
         for i in range(1, n_colors):
             cc+=[cn[i,:]]*p[i]
         list_colors.append(cc)
-
-
     list_colors = np.array(list_colors)
     len_time = len(list_colors)
     for i in range(20):
@@ -135,6 +137,9 @@ def polarchart(cols, prc):
 
 
 def barchart(cols, prc, width=2):
+    '''
+    Barchart for main colors in movie
+    '''
     cols_norm = [[i/255 for i in c] for c in cols]
     n_colors = len(prc[0])
     for time in range(len(cols)):
@@ -153,9 +158,21 @@ def barchart(cols, prc, width=2):
 
 
 def process_movie(file_path='', alg='cv', \
-                  n_clusters=3, output_file='', colorspace='luv'):
-    '''
-    Process movie file
+                  n_clusters=3, output_file='',
+                  colorspace='luv', \
+                  r=0.1):
+    '''Process movie file every 10 images:
+
+    Args:
+    - file_path (str): path to movie file
+    - alg (str): algorithm used for the extraction
+    of the main colors. Choice between
+        + cv: opencv implementation of K-Means
+        + cuda: cuda implementation of K-Means
+        + sklearn: sklearn implementation of K-Means
+        + gaussian: sklearn implementation of Mixture Gaussian
+    - n_clusters: number of color to be extracted
+    - colorspace: colorspace used to compute the distance. Choice between luv, hsl, lab
     '''
     cap = cv2.VideoCapture(file_path)
     n_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -181,7 +198,6 @@ def process_movie(file_path='', alg='cv', \
                 break
         else:
             break
-        r   = .1
         dim = (int(img.shape[1]*r), int(img.shape[0] * r))
         img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
         img = img.reshape(img.shape[0]*img.shape[1], img.shape[2])
@@ -203,7 +219,7 @@ def process_movie(file_path='', alg='cv', \
         list_prc.append(prc)
     cap.release()
     pickle.dump({'centers': list_centers,
-                 'prc': prc,
+                 'prc': list_prc,
                  'colorspace': colorspace},
                 open(output_file,'wb'))
 
