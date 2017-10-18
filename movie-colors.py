@@ -230,12 +230,13 @@ def process_movie(file_path='', alg='cv', \
 
     list_centers = [color_to_rgb(x, colorspace) for x in list_centers]
     cap.release()
+    dump_file = 'data/%s.p'%output_file.split('.')[0]
     pickle.dump({'centers': list_centers,
                  'prc': list_prc,
                  'colorspace': colorspace},
                 open('data_save.p','wb'))
     polarchart(cols_rgb=list_centers, prc=list_prc)
-    plt.savefig(output_file)
+    plt.savefig(output_file, dpi=300)
 
 
 def main(argv):
@@ -247,7 +248,7 @@ def main(argv):
                         help="kmeans implementation choice: sklearn, cv, cuda, gaussian",
                         default="cv")
     parser.add_argument('-c', '--colorspace',
-                        help="colorspace to compute clusters (hsv/hls/luv)",
+                        help="colorspace to compute clusters (hsv/hls/luv/lab)",
                         default="luv")
     parser.add_argument('-n', '--n_colors', type=int,
                         help='number of colors to extract',
