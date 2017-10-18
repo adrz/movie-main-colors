@@ -175,7 +175,10 @@ def process_movie(file_path='', alg='cv', \
         cnt=1
         if success:
             if colorspace in hash_colorspace.keys():
-                img = cv2.cvtColor(img, hash_colorspace[colorspace][0]
+                img = cv2.cvtColor(img, hash_colorspace[colorspace][0])
+            else:
+                print('wrong colorspace')
+                break
         else:
             break
         r   = .1
