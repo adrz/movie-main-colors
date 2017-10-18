@@ -230,12 +230,13 @@ def process_movie(file_path='', alg='cv', \
 
     list_centers = [color_to_rgb(x, colorspace) for x in list_centers]
     cap.release()
+    pickle.dump({'centers': list_centers,
+                 'prc': list_prc,
+                 'colorspace': colorspace},
+                open('data_save.p','wb'))
     polarchart(list_centers, prc)
     plt.savefig(output_file)
-#    pickle.dump({'centers': list_centers,
-#                 'prc': list_prc,
-#                 'colorspace': colorspace},
-#                open(output_file,'wb'))
+
 
 def main(argv):
     parser = argparse.ArgumentParser()
