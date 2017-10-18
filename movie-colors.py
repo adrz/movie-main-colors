@@ -234,7 +234,7 @@ def process_movie(file_path='', alg='cv', \
     pickle.dump({'centers': list_centers,
                  'prc': list_prc,
                  'colorspace': colorspace},
-                open('data_save.p','wb'))
+                open(dump_file,'wb'))
     polarchart(cols_rgb=list_centers, prc=list_prc)
     plt.savefig(output_file, dpi=300)
 
