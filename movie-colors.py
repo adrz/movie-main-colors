@@ -153,7 +153,7 @@ def barchart(cols, prc, width=2):
 
 
 def process_movie(file_path='', alg='cv', \
-                  output_file='', colorspace='luv'):
+                  n_clusters=3, output_file='', colorspace='luv'):
     '''
     Process movie file
     '''
@@ -190,13 +190,13 @@ def process_movie(file_path='', alg='cv', \
         img_hsv = scaler.transform(img)
         
         if alg=='cv':
-            centers, prc = get_kmeans_cv_prc(img, 3)
+            centers, prc = get_kmeans_cv_prc(img, n_clusters)
         elif alg=='cuda':
-            centers, prc = get_kmeans_cuda(img, 3)
+            centers, prc = get_kmeans_cuda(img, n_clusters)
         elif alg=='sklearn':
-            centers, prc = get_kmeans_prc(img, 3)
+            centers, prc = get_kmeans_prc(img, n_clusters)
         elif alg=='gaussian':
-            centers, prc = get_gaussian(img, 3)
+            centers, prc = get_gaussian(img, n_clusters)
         print(cnt_total/n_imgs*100)
         centers = scaler.inverse_transform(centers)    
         list_centers.append(centers)
