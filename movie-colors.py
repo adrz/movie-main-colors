@@ -184,7 +184,7 @@ def process_movie(file_path='', alg='cv', \
         r   = .1
         dim = (int(img.shape[1]*r), int(img.shape[0] * r))
         img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
-        img = img_hsv.reshape(img.shape[0]*img.shape[1], img.shape[2])
+        img = img.reshape(img.shape[0]*img.shape[1], img.shape[2])
 
         scaler.fit(img)
         img_hsv = scaler.transform(img)
