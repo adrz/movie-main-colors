@@ -109,7 +109,7 @@ def polarchart(cols, prc, colorspace='luv'):
     polarchart for main colors in movie
     '''
     cols_rgb = np.array([color_to_rgb(x, colorspace) for x in cols])
-    prc_norm = [np.round(x*20) for x in prc]
+    prc_norm = [np.round(x/5) for x in prc]
     n_colors = len(prc[0])
     diff_norm = np.where( np.sum(prc_norm, 1) == 19 )[0]
     for ind in diff_norm:
@@ -120,6 +120,7 @@ def polarchart(cols, prc, colorspace='luv'):
 
     prc_norm = np.uint8(prc_norm)
     list_colors = []
+    
     for p,c in zip(prc_norm,cols_rgb):
         cn = c[0]
         cc = [cn[0,:]]*p[0]
@@ -127,13 +128,18 @@ def polarchart(cols, prc, colorspace='luv'):
             cc+=[cn[i,:]]*p[i]
         list_colors.append(cc)
     list_colors = np.array(list_colors)
+
+        
     len_time = len(list_colors)
+
+    make_pie([1], [(255,255,255)], radius=1)
+    make_pie([1], [(255,255,255)], radius=1-.04*1)
     for i in range(20):
-        radius = 1-.04*i
+        radius = 1-.04*(i+2)
         c = list(list_colors[:,i,:])
         make_pie([1]*len_time, c, radius=radius)
 
-    make_pie([1], [(255,255,255)], radius=1-.04*20)
+    make_pie([1], [(255,255,255)], radius=1-.04*22)
 
 
 def barchart(cols, prc, width=2):
@@ -185,7 +191,7 @@ def process_movie(file_path='', alg='cv', \
     ##
     
     while cap.isOpened():
-        while cnt%100:
+        while cnt%10:
             success, img = cap.read()
             cnt+=1
             cnt_total+=1
@@ -217,7 +223,8 @@ def process_movie(file_path='', alg='cv', \
         centers = scaler.inverse_transform(centers)    
         list_centers.append(centers)
         list_prc.append(prc)
-    
+
+    list_centers = [color_to_rgb(x, colorspace) for x in list_centers]
     cap.release()
     pickle.dump({'centers': list_centers,
                  'prc': list_prc,
