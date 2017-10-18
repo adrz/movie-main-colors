@@ -104,42 +104,42 @@ def get_donut_chart(centers_hsv, colorspace=''):
     plt.show()
 
 
-def polarchart(cols, prc, colorspace='luv'):
+def polarchart(cols_rgb, prc, colorspace='luv'):
     '''
     polarchart for main colors in movie
     '''
-    cols_rgb = np.array([color_to_rgb(x, colorspace) for x in cols])
+#    cols_rgb = np.array([color_to_rgb(x, colorspace) for x in cols])
     prc_norm = [np.round(x/5) for x in prc]
     n_colors = len(prc[0])
-    diff_norm = np.where( np.sum(prc_norm, 1) == 19 )[0]
+#    diff_norm = np.where( np.sum(prc_norm, 1) == 19 )[0]
+    diff_norm = [i for i,p in enumerate(prc_norm) if np.sum(p) == 19]
     for ind in diff_norm:
         prc_norm[ind][-1] = prc_norm[ind][-1]+1
-    diff_norm = np.where( np.sum(prc_norm, 1) == 21 )[0]
+    diff_norm = [i for i,p in enumerate(prc_norm) if np.sum(p) == 21]
     for ind in diff_norm:
         prc_norm[ind][0] = prc_norm[ind][0]-1
 
-    prc_norm = np.uint8(prc_norm)
+#    prc_norm = np.uint8(prc_norm)
     list_colors = []
-    
+
     for p,c in zip(prc_norm,cols_rgb):
         cn = c[0]
-        cc = [cn[0,:]]*p[0]
+        cc = [cn[0,:]]*int(p[0])
+        n_colors = len(p)
         for i in range(1, n_colors):
-            cc+=[cn[i,:]]*p[i]
+            cc+=[cn[i,:]]*int(p[i])
         list_colors.append(cc)
     list_colors = np.array(list_colors)
 
-        
+
     len_time = len(list_colors)
 
-    make_pie([1], [(255,255,255)], radius=1)
-    make_pie([1], [(255,255,255)], radius=1-.04*1)
     for i in range(20):
-        radius = 1-.04*(i+2)
+        radius = 1-.04*i
         c = list(list_colors[:,i,:])
         make_pie([1]*len_time, c, radius=radius)
 
-    make_pie([1], [(255,255,255)], radius=1-.04*22)
+    make_pie([1], [(255,255,255)], radius=1-.04*20)
 
 
 def barchart(cols, prc, width=2):
@@ -209,7 +209,7 @@ def process_movie(file_path='', alg='cv', \
         img = img.reshape(img.shape[0]*img.shape[1], img.shape[2])
 
         scaler.fit(img)
-        img_hsv = scaler.transform(img)
+        img = scaler.transform(img)
         
         if alg=='cv':
             centers, prc = get_kmeans_cv_prc(img, n_clusters)
