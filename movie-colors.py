@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
+import matplotlib.colors as cls
 import cv2
 import numpy as np
 import sys
@@ -24,18 +26,34 @@ def make_pie(sizes, cols, radius=1):
     plt.axis('equal')
     outside, _ = plt.pie(sizes, counterclock=False, radius=radius, colors=col, startangle=90)
 
+def get_kmeans_prc(img, n_clusters=3, n_jobs=8):
+    model = KMeans(n_clusters=n_clusters, n_jobs=n_jobs, max_iter=20)
+    model.fit_predict(img)
+    un, cnt = np.unique(model.labels_, return_counts=True)
+    order_col = np.argsort(cnt)
+    order_col = order_col[::-1]
+    cnt = cnt[order_col]/np.sum(cnt)*100
+    cols = model.cluster_centers_[order_col,:]
+    return (cols, cnt)
+
+
 def get_kmeans(img, n_clusters=3, n_jobs=8):
     model = KMeans(n_clusters=n_clusters, n_jobs=n_jobs, max_iter=20)
     model.fit_predict(img)
     return model.cluster_centers_
 
-def get_kmeans_cv(img, n_clusters=3):
+def get_kmeans_cv_prc(img, n_clusters=3):
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
     flags = cv2.KMEANS_RANDOM_CENTERS
-    compactness,labels,centers = cv2.kmeans(np.float32(img), \
+    compactness, labels, centers = cv2.kmeans(np.float32(img), \
                                             n_clusters, None,\
                                             criteria,10,flags)
-    return centers
+    un, cnt = np.unique(labels, return_counts=True)
+    order_col = np.argsort(cnt)
+    order_col = order_col[::-1]
+    cnt = cnt[order_col]/np.sum(cnt)*100
+    cols = centers[order_col,:]
+    return (cols, cnt)
 
 def get_gaussian(img, n_clusters=3):
     model = GaussianMixture(n_components=n_clusters)
@@ -54,6 +72,19 @@ def hsv_to_rgb(center, colorspace='luv'):
     elif colorspace=='luv':
         return cv2.cvtColor(np.uint8([center]), cv2.COLOR_LUV2RGB)
 
+def color_to_rgb(center, colorspace='luv'):
+    return cv2.cvtColor(np.uint8([center]), hash_colorspace[colorspace][1])
+
+        
+def increase_saturation(colors, ratio=1.4):
+    colors_hsv = cv2.cvtColor(np.uint8(colors), cv2.COLOR_RGB2HSV)[0]
+    s = colors_hsv[:,1]
+    s = np.clip(s*ratio, 0, 255)
+    s = np.uint8(s)
+    colors_hsv[:,1] = s
+    return cv2.cvtColor(np.uint8([colors_hsv]), cv2.COLOR_HSV2RGB)
+
+
 def get_donut_chart(centers_hsv, colorspace=''):
     centers_rgb = np.array([hsv_to_rgb(x, colorspace) for x in centers_hsv])
     c1 = list(centers_rgb[:,0,0,:])
@@ -66,13 +97,59 @@ def get_donut_chart(centers_hsv, colorspace=''):
 
     len_colors = len(c1)
     e1 = (255, 255, 255)
-    make_pie([1]*len_colors, c1, radius=1.2)
+    make_pie([1]*len_colors, c3, radius=1.2)
     make_pie([1]*len_colors, c2, radius=1)
-    make_pie([1]*len_colors, c3, radius=.8)
+    make_pie([1]*len_colors, c1, radius=.8)
     make_pie([1], [e1], radius=.6)
     plt.show()
 
-    
+
+def polarchart(cols, prc):
+    prc_norm = [np.round(x/5) for x in prc]
+    n_colors = len(prc[0])
+    diff_norm = np.where( np.sum(prc_norm, 1) == 19 )[0]
+    for ind in diff_norm:
+        prc_norm[ind][-1] = prc_norm[ind][-1]+1
+    diff_norm = np.where( np.sum(prc_norm, 1) == 21 )[0]
+    for ind in diff_norm:
+        prc_norm[ind][0] = prc_norm[ind][0]-1
+
+    prc_norm = np.uint8(prc_norm)
+    list_colors = []
+    for p,c in zip(prc_norm,cols):
+        cn = c[0]
+        cc = [cn[0,:]]*p[0]
+        for i in range(1, n_colors):
+            cc+=[cn[i,:]]*p[i]
+        list_colors.append(cc)
+
+
+    list_colors = np.array(list_colors)
+    len_time = len(list_colors)
+    for i in range(20):
+        radius = 1-.04*i
+        c = list(list_colors[:,i,:])
+        make_pie([1]*len_time, c, radius=radius)
+
+    make_pie([1], [(255,255,255)], radius=1-.04*20)
+
+
+def barchart(cols, prc, width=2):
+    cols_norm = [[i/255 for i in c] for c in cols]
+    n_colors = len(prc[0])
+    for time in range(len(cols)):
+        bot = 0
+        print(time)
+        for col in range(n_colors):
+            try:
+                prc_col = prc[time][col]
+            except:
+                prc_col = 0
+            col_bar = cls.to_hex(cols_norm[time][0][col,:])
+            plt.bar(time, prc_col, width, color=col_bar, bottom=bot)
+            bot+=prc_col
+
+
 
 
 def process_movie(file_path='', alg='cv', \
@@ -85,7 +162,7 @@ def process_movie(file_path='', alg='cv', \
     cnt_total = 0
     cnt = 1
     list_centers = []
-
+    list_prc = []
     ##
     scaler = StandardScaler()
     ##
@@ -97,31 +174,30 @@ def process_movie(file_path='', alg='cv', \
             cnt_total+=1
         cnt=1
         if success:
-            if colorspace=='hsv':
-                img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-            elif colorspace=='luv':
-                img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2LUV)
+            if colorspace in hash_colorspace.keys():
+                img = cv2.cvtColor(img, hash_colorspace[colorspace][0]
         else:
             break
-        r = .1
+        r   = .1
         dim = (int(img_hsv.shape[1]*r), int(img_hsv.shape[0] * r))
-        img_hsv = cv2.resize(img_hsv, dim, interpolation=cv2.INTER_AREA)
-        img_hsv = img_hsv.reshape(img_hsv.shape[0]*img_hsv.shape[1], img_hsv.shape[2])
+        img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+        img = img_hsv.reshape(img.shape[0]*img.shape[1], img.shape[2])
 
-        scaler.fit(img_hsv)
-        img_hsv = scaler.transform(img_hsv)
+        scaler.fit(img)
+        img_hsv = scaler.transform(img)
         
         if alg=='cv':
-            centers = get_kmeans_cv(img_hsv, 3)
+            centers = get_kmeans_cv_prc(img, 3)
         elif alg=='cuda':
-            centers = get_kmeans_cuda(img_hsv, 3)
+            centers = get_kmeans_cuda(img, 3)
         elif alg=='sklearn':
-            centers = get_kmeans(img_hsv, 3)
+            centers = get_kmeans_prc(img, 3)
         elif alg=='gaussian':
-            centers = get_gaussian(img_hsv, 3)
+            centers = get_gaussian(img, 3)
         print(cnt_total/n_imgs*100)
         centers = scaler.inverse_transform(centers)    
         list_centers.append(centers)
+        list_prc.append(prc)
     cap.release()
     pickle.dump(list_centers, open(output_file,'wb'))
 
