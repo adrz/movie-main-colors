@@ -190,13 +190,13 @@ def process_movie(file_path='', alg='cv', \
         img_hsv = scaler.transform(img)
         
         if alg=='cv':
-            centers = get_kmeans_cv_prc(img, 3)
+            centers, prc = get_kmeans_cv_prc(img, 3)
         elif alg=='cuda':
-            centers = get_kmeans_cuda(img, 3)
+            centers, prc = get_kmeans_cuda(img, 3)
         elif alg=='sklearn':
-            centers = get_kmeans_prc(img, 3)
+            centers, prc = get_kmeans_prc(img, 3)
         elif alg=='gaussian':
-            centers = get_gaussian(img, 3)
+            centers, prc = get_gaussian(img, 3)
         print(cnt_total/n_imgs*100)
         centers = scaler.inverse_transform(centers)    
         list_centers.append(centers)
@@ -215,12 +215,16 @@ def main(argv):
     parser.add_argument('-c', '--colorspace',
                         help="colorspace to compute clusters (hsv/hls/luv)",
                         default="luv")
+    parser.add_argument('-n', '--n_colors', type=int,
+                        help='number of colors to extract',
+                        default=3)
     parser.add_argument('-o', '--output_file',
                         help="image output",
                         default='output.pdf')
     args = parser.parse_args()
     process_movie(file_path=args.input_file, \
                   alg=args.alg, \
+                  n_clusters=args.n_colors,\
                   output_file=args.output_file,\
                   colorspace=args.colorspace)
     # args.input_file
