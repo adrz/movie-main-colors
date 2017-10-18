@@ -254,7 +254,7 @@ def main(argv):
                         help='number of colors to extract',
                         default=3)
     parser.add_argument('--normalize', type=int,
-                        default=0)
+                        default=1)
     parser.add_argument('-o', '--output_file',
                         help="image output",
                         default='output.pdf')
