@@ -249,7 +249,7 @@ def main(argv):
                         default="cv")
     parser.add_argument('-c', '--colorspace',
                         help="colorspace to compute clusters (hsv/hls/luv/lab)",
-                        default="luv")
+                        default="lab")
     parser.add_argument('-n', '--n_colors', type=int,
                         help='number of colors to extract',
                         default=3)
