@@ -202,7 +202,8 @@ def process_movie(file_path='', alg='cv', \
         list_centers.append(centers)
         list_prc.append(prc)
     cap.release()
-    pickle.dump(list_centers, open(output_file,'wb'))
+    pickle.dump({'centers': list_centers, 'prc': prc},
+                open(output_file,'wb'))
 
 def main(argv):
     parser = argparse.ArgumentParser()
