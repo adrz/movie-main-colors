@@ -166,6 +166,7 @@ def barchart(cols, prc, width=2):
 def process_movie(file_path='', alg='cv', \
                   n_clusters=3, output_file='',
                   colorspace='luv', \
+                  normalize=1, \
                   r=0.1):
     '''Process movie file every 10 images:
 
@@ -208,8 +209,9 @@ def process_movie(file_path='', alg='cv', \
         img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
         img = img.reshape(img.shape[0]*img.shape[1], img.shape[2])
 
-        scaler.fit(img)
-        img = scaler.transform(img)
+        if normalize:
+            scaler.fit(img)
+            img = scaler.transform(img)
         
         if alg=='cv':
             centers, prc = get_kmeans_cv_prc(img, n_clusters)
@@ -220,16 +222,20 @@ def process_movie(file_path='', alg='cv', \
         elif alg=='gaussian':
             centers, prc = get_gaussian(img, n_clusters)
         print(cnt_total/n_imgs*100)
-        centers = scaler.inverse_transform(centers)    
+        if normalize:    
+            centers = scaler.inverse_transform(centers)    
+
         list_centers.append(centers)
         list_prc.append(prc)
 
     list_centers = [color_to_rgb(x, colorspace) for x in list_centers]
     cap.release()
-    pickle.dump({'centers': list_centers,
-                 'prc': list_prc,
-                 'colorspace': colorspace},
-                open(output_file,'wb'))
+    polarchart(list_centers, prc)
+    plt.savefig(output_file)
+#    pickle.dump({'centers': list_centers,
+#                 'prc': list_prc,
+#                 'colorspace': colorspace},
+#                open(output_file,'wb'))
 
 def main(argv):
     parser = argparse.ArgumentParser()
@@ -245,12 +251,15 @@ def main(argv):
     parser.add_argument('-n', '--n_colors', type=int,
                         help='number of colors to extract',
                         default=3)
+    parser.add_argument('--normalize', type=int,
+                        default=0)
     parser.add_argument('-o', '--output_file',
                         help="image output",
                         default='output.pdf')
     args = parser.parse_args()
     process_movie(file_path=args.input_file, \
                   alg=args.alg, \
+                  normalize=args.normalize, \
                   n_clusters=args.n_colors,\
                   output_file=args.output_file,\
                   colorspace=args.colorspace)
