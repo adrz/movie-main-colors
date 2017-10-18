@@ -202,7 +202,9 @@ def process_movie(file_path='', alg='cv', \
         list_centers.append(centers)
         list_prc.append(prc)
     cap.release()
-    pickle.dump({'centers': list_centers, 'prc': prc},
+    pickle.dump({'centers': list_centers,
+                 'prc': prc,
+                 'colorspace', colorspace},
                 open(output_file,'wb'))
 
 def main(argv):
