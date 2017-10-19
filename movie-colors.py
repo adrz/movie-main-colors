@@ -104,7 +104,7 @@ def get_donut_chart(centers_hsv, colorspace=''):
     plt.show()
 
 
-def polarchart(cols_rgb, prc, colorspace='luv'):
+def polarchart(cols_rgb, prc, blur=True):
     '''
     polarchart for main colors in movie
     '''
@@ -272,3 +272,5 @@ if __name__ == "__main__":
     main(sys.argv[1:])
 
 
+
+# https://python-graph-gallery.com/160-basic-donut-plot/
