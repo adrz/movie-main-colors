@@ -197,7 +197,7 @@ def main(argv):
         blur = False
 
     if args.type == 'polar':
-        polarchart2(cols_rgb=cols, prc=prc, \
+        polarchart2(cols=cols, prc=prc, \
                    blur=blur, output_file=args.output_file, \
                    saturate=args.saturate)
     elif args.type == 'bar':
@@ -207,4 +207,3 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
-
