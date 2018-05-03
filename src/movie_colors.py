@@ -146,12 +146,23 @@ def polarchart2(cols, prc, blur, output_file, saturate):
         bot = 25-i
         ax.bar(left=left_outer,
                width=2 * np.pi / time_length, bottom=bot, color=col_bb/255.,
-               linewidth=0, alpha=1, antialiased=True,
+               linewidth=0, alpha=1, antialiased=True, rasterized=True,
                height=np.zeros_like(left_outer) + 1)
+        ax.bar(left=left_outer,
+               width=2 * np.pi / time_length, bottom=bot, color=col_bb/255.,
+               linewidth=0, alpha=1, antialiased=True, rasterized=True,
+               height=np.zeros_like(left_outer) + 1)
+        ax.bar(left=left_outer,
+               width=2 * np.pi / time_length, bottom=bot, color=col_bb/255.,
+               linewidth=0, alpha=1, antialiased=True, rasterized=True,
+               height=np.zeros_like(left_outer) + 1)
+        # ax.set_rasterized(True)
+        # ax.set_rasterization_zorder(0)
         return ax
 
     cols_rgb = process_cols(cols, prc, blur, saturate)
     max_pixel = 3840
+    max_pixel = 1000
     r = max_pixel/cols_rgb.shape[0]
     dim = (int(cols_rgb.shape[1]), int(cols_rgb.shape[0]*r))
     cols_rgb = cv2.resize(cols_rgb, dim, interpolation=cv2.INTER_AREA)
@@ -164,18 +175,20 @@ def polarchart2(cols, prc, blur, output_file, saturate):
         plt_bar, cols_rgb=cols_rgb, left_outer=left_outer)
 
     # hackish way of avoiding aliasing with matplotlib
-    t = time()
-    x = list(map(partial_plt_bar, range(20)))
-    print(time()-t)
-
-    t = time()
-    x = list(map(partial_plt_bar, range(20)))
-    print(time()-t)
-
+    # https://stackoverflow.com/questions/8263769/hide-contour-linestroke-on-pyplot-contourf-to-get-only-fills?noredirect=1&lq=1
     t = time()
     x = list(map(partial_plt_bar, range(20)))
     print(time()-t)
     ax.set_axis_off()
+    # ax.set_rasterized(True)
+    # ax.set_rasterization_zorder(0)
+    # t = time()
+    # x = list(map(partial_plt_bar, range(20)))
+    # print(time()-t)
+
+    # t = time()
+    # x = list(map(partial_plt_bar, range(20)))
+    # print(time()-t)
     plt.savefig(output_file,
                 bbox_inches='tight', transparent=True)
 

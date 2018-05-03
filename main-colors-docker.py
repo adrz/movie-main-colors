@@ -6,14 +6,15 @@ import sys
 from src.movie_colors import (process_movie,
                               polarchart2,
                               barchart)
-import argcomplete
+import subprocess
+import os
 
 
 def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input_file',
-                        help="input movie file",
-                        default="movie.mp4")
+                        help="full path of input movie file",
+                        default="/home/user/movie.mp4")
     parser.add_argument('-a', '--alg',
                         help="kmeans implementation choice: sklearn, cv, cuda, gaussian",
                         default="cv")
@@ -35,31 +36,22 @@ def main(argv):
                         help='polar or bar',
                         default='polar')
     parser.add_argument('-o', '--output_file',
-                        help="image output",
-                        default='output.pdf')
-    argcomplete.autocomplete(parser)
+                        help="image output (will be saved in results/)",
+                        default='output.png')
     args = parser.parse_args()
-    cols, prc = process_movie(file_path=args.input_file,
-                              alg=args.alg,
-                              normalize=args.normalize,
-                              n_clusters=args.n_colors,
-                              colorspace=args.colorspace)
-    import pickle
-    pickle.dump({'cols': cols, 'prc': prc}, open('out.p', 'wb'))
-    if args.blur_xy != 0:
-        blur = (args.blur_xy, args.blur_xy)
-    else:
-        blur = False
-
-    if args.type == 'polar':
-        polarchart2(cols=cols, prc=prc,
-                    blur=blur, output_file=args.output_file,
-                    saturate=args.saturate)
-    elif args.type == 'bar':
-        barchart(cols_rgb=cols, prc=prc,
-                 blur=blur, output_file=args.output_file,
-                 saturate=args.saturate)
-
+    path_file = os.path.dirname(args.input_file)
+    base_file = os.path.basename(args.input_file)_
+    subprocess.check_call(['docker', 'build', '-t', 'moviecolors', '.'])
+    subprocess.check_call(['docker', 'run', '--rm',
+                           '-v', '/data:{}'.format(path_file),
+                           '-v', '/results:./results',
+                           'moviecolors:latest',
+                           '/data/{}'.format(base_file),
+                           args.alg, args.colorspace,
+                           args.n_colors, args.normalize,
+                           args.blur_xy, args.saturate,
+                           args.type,
+                           '/results/{}'.format(args.output_file)])
 
 if __name__ == "__main__":
     main(sys.argv[1:])
