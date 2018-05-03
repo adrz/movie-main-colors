@@ -6,6 +6,7 @@ import sys
 from src.movie_colors import (process_movie,
                               polarchart2,
                               barchart)
+import argcomplete
 
 
 def main(argv):
@@ -36,7 +37,7 @@ def main(argv):
     parser.add_argument('-o', '--output_file',
                         help="image output",
                         default='output.pdf')
-
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
     cols, prc = process_movie(file_path=args.input_file,
                               alg=args.alg,
