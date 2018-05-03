@@ -52,7 +52,8 @@ RUN wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip \
 && rm -r /opencv-${OPENCV_VERSION}
 
 COPY entrypoint.sh /
-COPY ./*.py /app
+COPY ./main-colors-docker.py /app/
+COPY ./main-colors.py /app/
 COPY ./src /app/
 COPY requirements.txt /
 RUN virtualenv -p python3 env && \
