@@ -21,17 +21,17 @@ def main(argv):
     parser.add_argument('-c', '--colorspace',
                         help="colorspace to compute clusters (hsv/hls/luv/lab)",
                         default="lab")
-    parser.add_argument('-n', '--n_colors', type=int,
+    parser.add_argument('-n', '--n_colors',
                         help='number of colors to extract',
-                        default=3)
-    parser.add_argument('--normalize', type=int,
-                        default=1)
+                        default="3")
+    parser.add_argument('--normalize',
+                        default="1")
     parser.add_argument('-x', '--blur_xy',
-                        help="", type=int,
-                        default=5)
-    parser.add_argument('-s', '--saturate', type=float,
+                        help="",
+                        default="5")
+    parser.add_argument('-s', '--saturate',
                         help='',
-                        default=1)
+                        default="1")
     parser.add_argument('-t', '--type',
                         help='polar or bar',
                         default='polar')
