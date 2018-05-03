@@ -19,7 +19,8 @@ RUN apt-get update && \
         libtiff-dev \
         libjasper-dev \
         libavformat-dev \
-        libpq-dev
+        libpq-dev &&\
+    pip install virtualenv
 
 RUN pip install numpy
 
