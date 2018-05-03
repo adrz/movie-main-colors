@@ -14,12 +14,10 @@ def main(argv):
                         help="input movie file",
                         default="movie.mp4")
     parser.add_argument('-a', '--alg',
-                        help=("kmeans implementation choice:",
-                              "sklearn, cv, cuda, gaussian"),
+                        help="kmeans implementation choice: sklearn, cv, cuda, gaussian",
                         default="cv")
     parser.add_argument('-c', '--colorspace',
-                        help=("colorspace to compute ",
-                              "clusters (hsv/hls/luv/lab)"),
+                        help="colorspace to compute clusters (hsv/hls/luv/lab)",
                         default="lab")
     parser.add_argument('-n', '--n_colors', type=int,
                         help='number of colors to extract',
