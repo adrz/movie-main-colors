@@ -40,7 +40,7 @@ def main(argv):
                         default='output.png')
     args = parser.parse_args()
     path_file = os.path.dirname(args.input_file)
-    base_file = os.path.basename(args.input_file)_
+    base_file = os.path.basename(args.input_file)
     subprocess.check_call(['docker', 'build', '-t', 'moviecolors', '.'])
     subprocess.check_call(['docker', 'run', '--rm',
                            '-v', '/data:{}'.format(path_file),
@@ -52,6 +52,7 @@ def main(argv):
                            args.blur_xy, args.saturate,
                            args.type,
                            '/results/{}'.format(args.output_file)])
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
