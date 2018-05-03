@@ -52,8 +52,10 @@ RUN wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip \
 && rm -r /opencv-${OPENCV_VERSION}
 
 COPY entrypoint.sh /
-COPY ./ /app
+COPY ./*.py /app
+COPY ./src /app/
+COPY requirements.txt /
 RUN virtualenv -p python3 env && \
     . env/bin/activate && \
-    pip install -r /app/requirements.txt
+    pip install -r requirements.txt
 ENTRYPOINT ["/entrypoint.sh"]

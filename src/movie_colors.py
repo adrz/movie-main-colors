@@ -3,6 +3,7 @@
 
 
 import matplotlib
+matplotlib.use('Agg')
 import cv2
 import numpy as np
 from sklearn.cluster import KMeans
@@ -11,7 +12,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.mixture import GaussianMixture
 from functools import partial
 from time import time
-# matplotlib.use('Agg')
 
 
 # dictionnary to convert between rgb and each colorspaces
@@ -144,6 +144,8 @@ def polarchart2(cols, prc, blur, output_file, saturate):
         col_bb = cols_rgb[:, i, :]
         time_length = cols_rgb.shape[0]
         bot = 25-i
+        # hackish way of avoiding aliasing with matplotlib
+        # https://stackoverflow.com/questions/8263769/hide-contour-linestroke-on-pyplot-contourf-to-get-only-fills?noredirect=1&lq=1
         ax.bar(left=left_outer,
                width=2 * np.pi / time_length, bottom=bot, color=col_bb/255.,
                linewidth=0, alpha=1, antialiased=True, rasterized=True,
@@ -156,8 +158,6 @@ def polarchart2(cols, prc, blur, output_file, saturate):
                width=2 * np.pi / time_length, bottom=bot, color=col_bb/255.,
                linewidth=0, alpha=1, antialiased=True, rasterized=True,
                height=np.zeros_like(left_outer) + 1)
-        # ax.set_rasterized(True)
-        # ax.set_rasterization_zorder(0)
         return ax
 
     cols_rgb = process_cols(cols, prc, blur, saturate)
@@ -174,21 +174,12 @@ def polarchart2(cols, prc, blur, output_file, saturate):
     partial_plt_bar = partial(
         plt_bar, cols_rgb=cols_rgb, left_outer=left_outer)
 
-    # hackish way of avoiding aliasing with matplotlib
-    # https://stackoverflow.com/questions/8263769/hide-contour-linestroke-on-pyplot-contourf-to-get-only-fills?noredirect=1&lq=1
     t = time()
-    x = list(map(partial_plt_bar, range(20)))
+    _ = list(map(partial_plt_bar, range(20)))
     print(time()-t)
     ax.set_axis_off()
     # ax.set_rasterized(True)
     # ax.set_rasterization_zorder(0)
-    # t = time()
-    # x = list(map(partial_plt_bar, range(20)))
-    # print(time()-t)
-
-    # t = time()
-    # x = list(map(partial_plt_bar, range(20)))
-    # print(time()-t)
     plt.savefig(output_file,
                 bbox_inches='tight', transparent=True)
 
