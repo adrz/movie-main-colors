@@ -11,7 +11,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.mixture import GaussianMixture
 from functools import partial
 from time import time
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 
 
 # dictionnary to convert between rgb and each colorspaces
