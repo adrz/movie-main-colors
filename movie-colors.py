@@ -22,13 +22,6 @@ hash_colorspace = {'hsv': [cv2.COLOR_BGR2HSV, cv2.COLOR_HSV2RGB],
                    }
 
 
-def make_pie(sizes, cols, radius=1):
-    col = [[i/255 for i in c] for c in cols]
-    plt.axis('equal')
-    outside, _ = plt.pie(sizes, counterclock=False,
-                         radius=radius, colors=col, startangle=90)
-
-
 def get_kmeans_prc(img, n_clusters=3, n_jobs=8):
     """ compute the kmeans of colors and sort it according
     to its percentage
@@ -44,12 +37,14 @@ def get_kmeans_prc(img, n_clusters=3, n_jobs=8):
 
 
 def get_kmeans(img, n_clusters=3, n_jobs=8):
+    """ compute kmeans (sklearn) """
     model = KMeans(n_clusters=n_clusters, n_jobs=n_jobs, max_iter=20)
     model.fit_predict(img)
     return model.cluster_centers_
 
 
 def get_kmeans_cv_prc(img, n_clusters=3):
+    """ compute opencv kmean implementation """
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
     flags = cv2.KMEANS_RANDOM_CENTERS
     compactness, labels, centers = cv2.kmeans(np.float32(img),
@@ -64,18 +59,21 @@ def get_kmeans_cv_prc(img, n_clusters=3):
 
 
 def get_gaussian(img, n_clusters=3):
+    """ compute clustering by means of gaussian mixture """
     model = GaussianMixture(n_components=n_clusters)
     model.fit(img)
     return model.means_
 
 
 def get_kmeans_cuda(img, n_clusters=3):
+    """ compute cuda kmean implementation """
     centroids, assignments = kmeans_cuda(np.float32(img), n_clusters,
                                          verbosity=0, metric="cos")
     return centroids
 
 
 def hsv_to_rgb(center, colorspace='luv'):
+    """ color convertion """
     if colorspace == 'hsv':
         return cv2.cvtColor(np.uint8([center]), cv2.COLOR_HSV2RGB)
     elif colorspace == 'luv':
@@ -83,10 +81,12 @@ def hsv_to_rgb(center, colorspace='luv'):
 
 
 def color_to_rgb(center, colorspace='luv'):
+    """ colors conversion """
     return cv2.cvtColor(np.uint8([center]), hash_colorspace[colorspace][1])
 
 
 def increase_saturation(colors, ratio=1.4):
+    """ increase saturation to get more 'vivid' results """
     colors_hsv = cv2.cvtColor(np.uint8(colors), cv2.COLOR_RGB2HSV)[0]
     s = colors_hsv[:, 1]
     s = np.clip(s*ratio, 0, 255)
@@ -95,16 +95,20 @@ def increase_saturation(colors, ratio=1.4):
     return cv2.cvtColor(np.uint8([colors_hsv]), cv2.COLOR_HSV2RGB)
 
 
+def make_pie(sizes, cols, radius=1):
+    """ plot a pie chart """
+    col = [[i/255 for i in c] for c in cols]
+    plt.axis('equal')
+    outside, _ = plt.pie(sizes, counterclock=False,
+                         radius=radius, colors=col, startangle=90)
+
+
 def get_donut_chart(centers_hsv, colorspace=''):
+    """ plot 3 concatenated pie chart """
     centers_rgb = np.array([hsv_to_rgb(x, colorspace) for x in centers_hsv])
     c1 = list(centers_rgb[:, 0, 0, :])
     c2 = list(centers_rgb[:, 0, 1, :])
     c3 = list(centers_rgb[:, 0, 2, :])
-
-#    c1 = list(centers_rgb[:,0,:,0])
-#    c2 = list(centers_rgb[:,0,:,1])
-#    c3 = list(centers_rgb[:,0,:,2])
-
     len_colors = len(c1)
     e1 = (255, 255, 255)
     make_pie([1]*len_colors, c3, radius=1.2)
@@ -115,10 +119,7 @@ def get_donut_chart(centers_hsv, colorspace=''):
 
 
 def polarchart(cols_rgb, prc, blur=True):
-    '''
-    polarchart for main colors in movie
-    '''
-#    cols_rgb = np.array([color_to_rgb(x, colorspace) for x in cols])
+    """  polarchart for main colors in movie """
     prc_norm = [np.round(x/5) for x in prc]
     n_colors = len(prc[0])
 #    diff_norm = np.where( np.sum(prc_norm, 1) == 19 )[0]
@@ -129,7 +130,6 @@ def polarchart(cols_rgb, prc, blur=True):
     for ind in diff_norm:
         prc_norm[ind][0] = prc_norm[ind][0]-1
 
-#    prc_norm = np.uint8(prc_norm)
     list_colors = []
 
     for p, c in zip(prc_norm, cols_rgb):
@@ -152,9 +152,7 @@ def polarchart(cols_rgb, prc, blur=True):
 
 
 def barchart(cols, prc, width=2):
-    '''
-    Barchart for main colors in movie
-    '''
+    """  Barchart for main colors in movie """
     cols_norm = [[i/255 for i in c] for c in cols]
     n_colors = len(prc[0])
     for time in range(len(cols)):
@@ -175,7 +173,7 @@ def process_movie(file_path='', alg='cv',
                   colorspace='luv',
                   normalize=1,
                   r=0.1):
-    '''Process movie file every 10 images:
+    """ Process movie file every 10 images:
 
     Args:
     - file_path (str): path to movie file
@@ -187,16 +185,14 @@ def process_movie(file_path='', alg='cv',
         + gaussian: sklearn implementation of Mixture Gaussian
     - n_clusters: number of color to be extracted
     - colorspace: colorspace used to compute the distance. Choice between luv, hsl, lab
-    '''
+    """
     cap = cv2.VideoCapture(file_path)
     n_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     cnt_total = 0
     cnt = 1
     list_centers = []
     list_prc = []
-    ##
     scaler = StandardScaler()
-    ##
 
     while cap.isOpened():
         while cnt % 10:
@@ -237,13 +233,11 @@ def process_movie(file_path='', alg='cv',
 
     list_centers = [color_to_rgb(x, colorspace) for x in list_centers]
     cap.release()
-    dump_file = 'data/%s.p' % output_file.split('.')[0]
+    dump_file = 'data/{}.p'.format(output_file.split('.')[0])
     pickle.dump({'centers': list_centers,
                  'prc': list_prc,
                  'colorspace': colorspace},
                 open(dump_file, 'wb'))
-#    polarchart(cols_rgb=list_centers, prc=list_prc)
-#    plt.savefig(output_file, dpi=300)
 
 
 def main(argv):
@@ -252,10 +246,12 @@ def main(argv):
                         help="input movie file",
                         default="movie.mp4")
     parser.add_argument('-a', '--alg',
-                        help="kmeans implementation choice: sklearn, cv, cuda, gaussian",
+                        help=("kmeans implementation choice:",
+                              "sklearn, cv, cuda, gaussian"),
                         default="cv")
     parser.add_argument('-c', '--colorspace',
-                        help="colorspace to compute clusters (hsv/hls/luv/lab)",
+                        help=("colorspace to compute ",
+                              "clusters (hsv/hls/luv/lab)"),
                         default="lab")
     parser.add_argument('-n', '--n_colors', type=int,
                         help='number of colors to extract',
@@ -272,7 +268,6 @@ def main(argv):
                   n_clusters=args.n_colors,
                   output_file=args.output_file,
                   colorspace=args.colorspace)
-    # args.input_file
 
 
 if __name__ == "__main__":
