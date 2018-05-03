@@ -30,6 +30,9 @@ def make_pie(sizes, cols, radius=1):
 
 
 def get_kmeans_prc(img, n_clusters=3, n_jobs=8):
+    """ compute the kmeans of colors and sort it according
+    to its percentage
+    """
     model = KMeans(n_clusters=n_clusters, n_jobs=n_jobs, max_iter=20)
     model.fit_predict(img)
     un, cnt = np.unique(model.labels_, return_counts=True)
