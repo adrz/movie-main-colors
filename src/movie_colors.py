@@ -142,9 +142,10 @@ def process_cols(cols_rgb, prc, blur, saturate=1):
 def polarchart2(cols, prc, blur, output_file, saturate):
     def plt_bar(i, cols_rgb, left_outer):
         col_bb = cols_rgb[:, i, :]
+        time_length = cols_rgb.shape[0]
         bot = 25-i
         ax.bar(left=left_outer,
-               width=2 * np.pi / time, bottom=bot, color=col_bb/255.,
+               width=2 * np.pi / time_length, bottom=bot, color=col_bb/255.,
                linewidth=0, alpha=1, antialiased=True,
                height=np.zeros_like(left_outer) + 1)
         return ax
