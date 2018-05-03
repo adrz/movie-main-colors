@@ -3,18 +3,18 @@
 
 
 import matplotlib
-import matplotlib.colors as cls
 import cv2
 import numpy as np
 from sklearn.cluster import KMeans
-from libKMCUDA import kmeans_cuda
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.mixture import GaussianMixture
 from functools import partial
+from time import time
 matplotlib.use('Agg')
 
 
+# dictionnary to convert between rgb and each colorspaces
 hash_colorspace = {'hsv': [cv2.COLOR_BGR2HSV, cv2.COLOR_HSV2RGB],
                    'luv': [cv2.COLOR_BGR2LUV, cv2.COLOR_LUV2RGB],
                    'hls': [cv2.COLOR_BGR2HLS, cv2.COLOR_HLS2RGB],
@@ -64,13 +64,6 @@ def get_gaussian(img, n_clusters=3):
     model = GaussianMixture(n_components=n_clusters)
     model.fit(img)
     return model.means_
-
-
-def get_kmeans_cuda(img, n_clusters=3):
-    """ compute cuda kmean implementation """
-    centroids, assignments = kmeans_cuda(np.float32(img), n_clusters,
-                                         verbosity=0, metric="cos")
-    return centroids
 
 
 def hsv_to_rgb(center, colorspace='luv'):
@@ -162,26 +155,25 @@ def polarchart2(cols, prc, blur, output_file, saturate):
     dim = (int(cols_rgb.shape[1]), int(cols_rgb.shape[0]*r))
     cols_rgb = cv2.resize(cols_rgb, dim, interpolation=cv2.INTER_AREA)
     fig, ax = plt.subplots(figsize=(20, 20), subplot_kw=dict(polar=True))
-    time = cols_rgb.shape[0]
-    left_outer = np.arange(0.0, 2 * np.pi, 2 * np.pi / time)
+    left_outer = np.arange(0.0, 2 * np.pi, 2 * np.pi / cols_rgb.shape[0])
     ax.set_theta_direction(-1)
     ax.set_theta_offset(np.pi/2.0)
 
     partial_plt_bar = partial(
         plt_bar, cols_rgb=cols_rgb, left_outer=left_outer)
-    from time import time as tt
 
-    t = tt()
+    # hackish way of avoiding aliasing with matplotlib
+    t = time()
     x = list(map(partial_plt_bar, range(20)))
-    print(tt()-t)
+    print(time()-t)
 
-    t = tt()
+    t = time()
     x = list(map(partial_plt_bar, range(20)))
-    print(tt()-t)
+    print(time()-t)
 
-    t = tt()
+    t = time()
     x = list(map(partial_plt_bar, range(20)))
-    print(tt()-t)
+    print(time()-t)
     ax.set_axis_off()
     plt.savefig(output_file,
                 bbox_inches='tight', transparent=True)
@@ -216,13 +208,12 @@ def polarchart(cols_rgb, prc, blur=True):
         c = list(list_colors[:, i, :])
         make_pie([1]*len_time, c, radius=radius)
 
+    # central white pie
     make_pie([1], [(255, 255, 255)], radius=1-.04*20)
 
 
 def barchart(cols, prc, blur, output_file, saturate):
-    '''
-    Barchart for main colors in movie
-    '''
+    """ Barchart for main colors in movie """
 
     img = process_cols(cols, prc, blur, saturate)
     dim = (int(img.shape[0]*.2), int(img.shape[0]))
@@ -234,7 +225,7 @@ def barchart(cols, prc, blur, output_file, saturate):
     a.set_xticks([])
     a.set_yticks([])
     plt.axis('off')
-    plt.savefig('test_bar.png', dpi=500,
+    plt.savefig(output_file, dpi=500,
                 bbox_inches='tight', edgecolor=None,
                 pad_inches=0, transparent=True)
 
@@ -251,7 +242,6 @@ def process_movie(file_path='', alg='cv',
     - alg (str): algorithm used for the extraction
     of the main colors. Choice between
         + cv: opencv implementation of K-Means
-        + cuda: cuda implementation of K-Means
         + sklearn: sklearn implementation of K-Means
         + gaussian: sklearn implementation of Mixture Gaussian
     - n_clusters: number of color to be extracted
@@ -297,8 +287,6 @@ def process_movie(file_path='', alg='cv',
         # find out the opencv kmeans implementation is the fastest
         if alg == 'cv':
             centers, prc = get_kmeans_cv_prc(img, n_clusters)
-        elif alg == 'cuda':
-            centers, prc = get_kmeans_cuda(img, n_clusters)
         elif alg == 'sklearn':
             centers, prc = get_kmeans_prc(img, n_clusters)
         elif alg == 'gaussian':
