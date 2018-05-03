@@ -43,7 +43,7 @@ def main(argv):
                               normalize=args.normalize,
                               n_clusters=args.n_colors,
                               colorspace=args.colorspace)
-    if args.blur_x != 0:
+    if args.blur_xy != 0:
         blur = (args.blur_x, args.blur_y)
     else:
         blur = False
