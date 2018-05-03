@@ -43,6 +43,8 @@ def main(argv):
                               normalize=args.normalize,
                               n_clusters=args.n_colors,
                               colorspace=args.colorspace)
+    import pickle
+    pickle.dump({'cols': cols, 'prc': prc}, open('out.p', 'wb'))
     if args.blur_xy != 0:
         blur = (args.blur_xy, args.blur_xy)
     else:
