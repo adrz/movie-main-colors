@@ -19,7 +19,8 @@ RUN apt-get update && \
         libtiff-dev \
         libjasper-dev \
         libavformat-dev \
-        libpq-dev
+        libpq-dev &&\
+    pip install virtualenv
 
 RUN pip install numpy
 
@@ -49,3 +50,13 @@ RUN wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip \
 && make install \
 && rm /${OPENCV_VERSION}.zip \
 && rm -r /opencv-${OPENCV_VERSION}
+
+COPY entrypoint.sh /
+COPY ./main-colors-docker.py /app/
+COPY ./main-colors.py /app/
+COPY ./src /app/src/
+COPY requirements.txt /
+RUN virtualenv -p python3 env && \
+    . env/bin/activate && \
+    pip install -r requirements.txt
+ENTRYPOINT ["/entrypoint.sh"]

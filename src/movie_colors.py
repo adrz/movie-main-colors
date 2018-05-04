@@ -2,31 +2,25 @@
 # -*- coding: utf-8 -*-
 
 
-import matplotlib.colors as cls
+import matplotlib
+matplotlib.use('Agg')
 import cv2
 import numpy as np
-import sys
-import argparse
 from sklearn.cluster import KMeans
-import pickle
-from libKMCUDA import kmeans_cuda
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.mixture import GaussianMixture
+from functools import partial
+from time import time
 
+
+# dictionnary to convert between rgb and each colorspaces
 hash_colorspace = {'hsv': [cv2.COLOR_BGR2HSV, cv2.COLOR_HSV2RGB],
                    'luv': [cv2.COLOR_BGR2LUV, cv2.COLOR_LUV2RGB],
                    'hls': [cv2.COLOR_BGR2HLS, cv2.COLOR_HLS2RGB],
                    'xyz': [cv2.COLOR_BGR2XYZ, cv2.COLOR_XYZ2RGB],
                    'lab': [cv2.COLOR_BGR2LAB, cv2.COLOR_LAB2RGB],
                    }
-
-
-def make_pie(sizes, cols, radius=1):
-    col = [[i/255 for i in c] for c in cols]
-    plt.axis('equal')
-    outside, _ = plt.pie(sizes, counterclock=False,
-                         radius=radius, colors=col, startangle=90)
 
 
 def get_kmeans_prc(img, n_clusters=3, n_jobs=8):
@@ -44,12 +38,14 @@ def get_kmeans_prc(img, n_clusters=3, n_jobs=8):
 
 
 def get_kmeans(img, n_clusters=3, n_jobs=8):
+    """ compute kmeans (sklearn) """
     model = KMeans(n_clusters=n_clusters, n_jobs=n_jobs, max_iter=20)
     model.fit_predict(img)
     return model.cluster_centers_
 
 
 def get_kmeans_cv_prc(img, n_clusters=3):
+    """ compute opencv kmean implementation """
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
     flags = cv2.KMEANS_RANDOM_CENTERS
     compactness, labels, centers = cv2.kmeans(np.float32(img),
@@ -64,18 +60,14 @@ def get_kmeans_cv_prc(img, n_clusters=3):
 
 
 def get_gaussian(img, n_clusters=3):
+    """ compute clustering by means of gaussian mixture """
     model = GaussianMixture(n_components=n_clusters)
     model.fit(img)
     return model.means_
 
 
-def get_kmeans_cuda(img, n_clusters=3):
-    centroids, assignments = kmeans_cuda(np.float32(img), n_clusters,
-                                         verbosity=0, metric="cos")
-    return centroids
-
-
 def hsv_to_rgb(center, colorspace='luv'):
+    """ color convertion """
     if colorspace == 'hsv':
         return cv2.cvtColor(np.uint8([center]), cv2.COLOR_HSV2RGB)
     elif colorspace == 'luv':
@@ -83,10 +75,12 @@ def hsv_to_rgb(center, colorspace='luv'):
 
 
 def color_to_rgb(center, colorspace='luv'):
+    """ colors conversion """
     return cv2.cvtColor(np.uint8([center]), hash_colorspace[colorspace][1])
 
 
 def increase_saturation(colors, ratio=1.4):
+    """ increase saturation to get more 'vivid' results """
     colors_hsv = cv2.cvtColor(np.uint8(colors), cv2.COLOR_RGB2HSV)[0]
     s = colors_hsv[:, 1]
     s = np.clip(s*ratio, 0, 255)
@@ -95,16 +89,20 @@ def increase_saturation(colors, ratio=1.4):
     return cv2.cvtColor(np.uint8([colors_hsv]), cv2.COLOR_HSV2RGB)
 
 
+def make_pie(sizes, cols, radius=1):
+    """ plot a pie chart """
+    col = [[i/255 for i in c] for c in cols]
+    plt.axis('equal')
+    outside, _ = plt.pie(sizes, counterclock=False,
+                         radius=radius, colors=col, startangle=90)
+
+
 def get_donut_chart(centers_hsv, colorspace=''):
+    """ plot 3 concatenated pie chart """
     centers_rgb = np.array([hsv_to_rgb(x, colorspace) for x in centers_hsv])
     c1 = list(centers_rgb[:, 0, 0, :])
     c2 = list(centers_rgb[:, 0, 1, :])
     c3 = list(centers_rgb[:, 0, 2, :])
-
-#    c1 = list(centers_rgb[:,0,:,0])
-#    c2 = list(centers_rgb[:,0,:,1])
-#    c3 = list(centers_rgb[:,0,:,2])
-
     len_colors = len(c1)
     e1 = (255, 255, 255)
     make_pie([1]*len_colors, c3, radius=1.2)
@@ -114,14 +112,11 @@ def get_donut_chart(centers_hsv, colorspace=''):
     plt.show()
 
 
-def polarchart(cols_rgb, prc, blur=True):
-    '''
-    polarchart for main colors in movie
-    '''
-#    cols_rgb = np.array([color_to_rgb(x, colorspace) for x in cols])
+def process_cols(cols_rgb, prc, blur, saturate=1):
+    if saturate > 1:
+        cols_rgb = [increase_saturation(x, ratio=saturate) for x in cols_rgb]
     prc_norm = [np.round(x/5) for x in prc]
     n_colors = len(prc[0])
-#    diff_norm = np.where( np.sum(prc_norm, 1) == 19 )[0]
     diff_norm = [i for i, p in enumerate(prc_norm) if np.sum(p) == 19]
     for ind in diff_norm:
         prc_norm[ind][-1] = prc_norm[ind][-1]+1
@@ -129,7 +124,77 @@ def polarchart(cols_rgb, prc, blur=True):
     for ind in diff_norm:
         prc_norm[ind][0] = prc_norm[ind][0]-1
 
-#    prc_norm = np.uint8(prc_norm)
+    list_colors = []
+
+    for p, c in zip(prc_norm, cols_rgb):
+        cn = c[0]
+        cc = [cn[0, :]]*int(p[0])
+        n_colors = len(p)
+        for i in range(1, n_colors):
+            cc += [cn[i, :]]*int(p[i])
+        list_colors.append(cc)
+    list_colors = np.array(list_colors)
+    if blur:
+        list_colors = cv2.blur(list_colors, blur, cv2.BORDER_REPLICATE)
+    return list_colors
+
+
+def polarchart2(cols, prc, blur, output_file, saturate):
+    def plt_bar(i, cols_rgb, left_outer):
+        col_bb = cols_rgb[:, i, :]
+        time_length = cols_rgb.shape[0]
+        bot = 25-i
+        # hackish way of avoiding aliasing with matplotlib
+        # https://stackoverflow.com/questions/8263769/hide-contour-linestroke-on-pyplot-contourf-to-get-only-fills?noredirect=1&lq=1
+        ax.bar(left=left_outer,
+               width=2 * np.pi / time_length, bottom=bot, color=col_bb/255.,
+               linewidth=0, alpha=1, antialiased=True, rasterized=True,
+               height=np.zeros_like(left_outer) + 1)
+        ax.bar(left=left_outer,
+               width=2 * np.pi / time_length, bottom=bot, color=col_bb/255.,
+               linewidth=0, alpha=1, antialiased=True, rasterized=True,
+               height=np.zeros_like(left_outer) + 1)
+        ax.bar(left=left_outer,
+               width=2 * np.pi / time_length, bottom=bot, color=col_bb/255.,
+               linewidth=0, alpha=1, antialiased=True, rasterized=True,
+               height=np.zeros_like(left_outer) + 1)
+        return ax
+
+    cols_rgb = process_cols(cols, prc, blur, saturate)
+    max_pixel = 3840
+    max_pixel = 1000
+    r = min(1, max_pixel/cols_rgb.shape[0])
+    dim = (int(cols_rgb.shape[1]), int(cols_rgb.shape[0]*r))
+    cols_rgb = cv2.resize(cols_rgb, dim, interpolation=cv2.INTER_AREA)
+    fig, ax = plt.subplots(figsize=(20, 20), subplot_kw=dict(polar=True))
+    left_outer = np.arange(0.0, 2 * np.pi, 2 * np.pi / cols_rgb.shape[0])
+    ax.set_theta_direction(-1)
+    ax.set_theta_offset(np.pi/2.0)
+
+    partial_plt_bar = partial(
+        plt_bar, cols_rgb=cols_rgb, left_outer=left_outer)
+
+    t = time()
+    _ = list(map(partial_plt_bar, range(20)))
+    print(time()-t)
+    ax.set_axis_off()
+    # ax.set_rasterized(True)
+    # ax.set_rasterization_zorder(0)
+    plt.savefig(output_file,
+                bbox_inches='tight', transparent=True)
+
+
+def polarchart(cols_rgb, prc, blur=True):
+    """  polarchart for main colors in movie """
+    prc_norm = [np.round(x/5) for x in prc]
+    n_colors = len(prc[0])
+    diff_norm = [i for i, p in enumerate(prc_norm) if np.sum(p) == 19]
+    for ind in diff_norm:
+        prc_norm[ind][-1] = prc_norm[ind][-1]+1
+    diff_norm = [i for i, p in enumerate(prc_norm) if np.sum(p) == 21]
+    for ind in diff_norm:
+        prc_norm[ind][0] = prc_norm[ind][0]-1
+
     list_colors = []
 
     for p, c in zip(prc_norm, cols_rgb):
@@ -148,26 +213,26 @@ def polarchart(cols_rgb, prc, blur=True):
         c = list(list_colors[:, i, :])
         make_pie([1]*len_time, c, radius=radius)
 
+    # central white pie
     make_pie([1], [(255, 255, 255)], radius=1-.04*20)
 
 
-def barchart(cols, prc, width=2):
-    '''
-    Barchart for main colors in movie
-    '''
-    cols_norm = [[i/255 for i in c] for c in cols]
-    n_colors = len(prc[0])
-    for time in range(len(cols)):
-        bot = 0
-        print(time)
-        for col in range(n_colors):
-            try:
-                prc_col = prc[time][col]
-            except:
-                prc_col = 0
-            col_bar = cls.to_hex(cols_norm[time][0][col, :])
-            plt.bar(time, prc_col, width, color=col_bar, bottom=bot)
-            bot += prc_col
+def barchart(cols, prc, blur, output_file, saturate):
+    """ Barchart for main colors in movie """
+
+    img = process_cols(cols, prc, blur, saturate)
+    dim = (int(img.shape[0]*.2), int(img.shape[0]))
+    img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+    img = cv2.transpose(img)
+    plt.imshow(img)
+    a = plt.gcf().gca()
+    a.set_frame_on(False)
+    a.set_xticks([])
+    a.set_yticks([])
+    plt.axis('off')
+    plt.savefig(output_file, dpi=500,
+                bbox_inches='tight', edgecolor=None,
+                pad_inches=0, transparent=True)
 
 
 def process_movie(file_path='', alg='cv',
@@ -175,29 +240,28 @@ def process_movie(file_path='', alg='cv',
                   colorspace='luv',
                   normalize=1,
                   r=0.1):
-    '''Process movie file every 10 images:
+    """ Process movie file every 10 images:
 
     Args:
     - file_path (str): path to movie file
     - alg (str): algorithm used for the extraction
     of the main colors. Choice between
         + cv: opencv implementation of K-Means
-        + cuda: cuda implementation of K-Means
         + sklearn: sklearn implementation of K-Means
         + gaussian: sklearn implementation of Mixture Gaussian
     - n_clusters: number of color to be extracted
-    - colorspace: colorspace used to compute the distance. Choice between luv, hsl, lab
-    '''
+    - colorspace: colorspace used to compute the distance
+                  choice between luv, hsl, lab
+    """
     cap = cv2.VideoCapture(file_path)
     n_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     cnt_total = 0
     cnt = 1
     list_centers = []
     list_prc = []
-    ##
     scaler = StandardScaler()
-    ##
 
+    # capture 1 out of 10 frame and processed it
     while cap.isOpened():
         while cnt % 10:
             success, img = cap.read()
@@ -212,18 +276,22 @@ def process_movie(file_path='', alg='cv',
                 break
         else:
             break
+
+        # flatten the image tensor into a 2D matrix (n_pixels x 3)
         dim = (int(img.shape[1]*r), int(img.shape[0] * r))
         img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
         img = img.reshape(img.shape[0]*img.shape[1], img.shape[2])
 
+        # kmeans assumes that the data are a distributed as a mixture
+        # of gaussian with covariance proportional to diagonal matrices
+        # scaling it often help with this assumption
         if normalize:
             scaler.fit(img)
             img = scaler.transform(img)
 
+        # find out the opencv kmeans implementation is the fastest
         if alg == 'cv':
             centers, prc = get_kmeans_cv_prc(img, n_clusters)
-        elif alg == 'cuda':
-            centers, prc = get_kmeans_cuda(img, n_clusters)
         elif alg == 'sklearn':
             centers, prc = get_kmeans_prc(img, n_clusters)
         elif alg == 'gaussian':
@@ -231,52 +299,9 @@ def process_movie(file_path='', alg='cv',
         print(cnt_total/n_imgs*100)
         if normalize:
             centers = scaler.inverse_transform(centers)
-
         list_centers.append(centers)
         list_prc.append(prc)
 
     list_centers = [color_to_rgb(x, colorspace) for x in list_centers]
     cap.release()
-    dump_file = 'data/%s.p' % output_file.split('.')[0]
-    pickle.dump({'centers': list_centers,
-                 'prc': list_prc,
-                 'colorspace': colorspace},
-                open(dump_file, 'wb'))
-#    polarchart(cols_rgb=list_centers, prc=list_prc)
-#    plt.savefig(output_file, dpi=300)
-
-
-def main(argv):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input_file',
-                        help="input movie file",
-                        default="movie.mp4")
-    parser.add_argument('-a', '--alg',
-                        help="kmeans implementation choice: sklearn, cv, cuda, gaussian",
-                        default="cv")
-    parser.add_argument('-c', '--colorspace',
-                        help="colorspace to compute clusters (hsv/hls/luv/lab)",
-                        default="lab")
-    parser.add_argument('-n', '--n_colors', type=int,
-                        help='number of colors to extract',
-                        default=3)
-    parser.add_argument('--normalize', type=int,
-                        default=1)
-    parser.add_argument('-o', '--output_file',
-                        help="image output",
-                        default='output.pdf')
-    args = parser.parse_args()
-    process_movie(file_path=args.input_file,
-                  alg=args.alg,
-                  normalize=args.normalize,
-                  n_clusters=args.n_colors,
-                  output_file=args.output_file,
-                  colorspace=args.colorspace)
-    # args.input_file
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
-
-
-# https://python-graph-gallery.com/160-basic-donut-plot/
+    return list_centers, list_prc
