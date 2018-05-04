@@ -54,7 +54,7 @@ RUN wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip \
 COPY entrypoint.sh /
 COPY ./main-colors-docker.py /app/
 COPY ./main-colors.py /app/
-COPY ./src /app/
+COPY ./src /app/src/
 COPY requirements.txt /
 RUN virtualenv -p python3 env && \
     . env/bin/activate && \

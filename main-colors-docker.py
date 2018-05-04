@@ -53,9 +53,9 @@ def main(argv):
                  args.type,
                  '/results/{}'.format(args.output_file)]
     print(list_proc)
-    subprocess.check_call(['docker', 'run', '--rm',
+    subprocess.check_call(['docker', 'run',
                            '-v', '{}:/data'.format(path_file),
-                           '-v', 'results:/results',
+                           '-v', '{}/results:/results'.format(os.getcwd()),
                            'moviecolors:latest',
                            '/data/{}'.format(base_file),
                            args.alg, args.colorspace,
