@@ -2,6 +2,16 @@ FROM python:3.6
 # credit to Josip Janzic <josip.janzic@gmail.com>
 # for ubuntu + opencv + python3
 
+WORKDIR /
+
+COPY entrypoint.sh /
+COPY ./main-colors-docker.py /app/
+COPY ./main-colors.py /app/
+COPY ./src /app/src/
+COPY requirements.txt /
+
+ENV OPENCV_VERSION="3.4.1"
+
 RUN apt-get update && \
         apt-get install -y \
         build-essential \
@@ -19,14 +29,10 @@ RUN apt-get update && \
         libtiff-dev \
         libjasper-dev \
         libavformat-dev \
-        libpq-dev &&\
-    pip install virtualenv
-
-RUN pip install numpy
-
-WORKDIR /
-ENV OPENCV_VERSION="3.4.1"
-RUN wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip \
+        libpq-dev && \
+    pip install virtualenv && \
+    pip install numpy && \
+    wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip \
 && unzip ${OPENCV_VERSION}.zip \
 && mkdir /opencv-${OPENCV_VERSION}/cmake_binary \
 && cd /opencv-${OPENCV_VERSION}/cmake_binary \
@@ -49,14 +55,10 @@ RUN wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip \
   -DPYTHON_PACKAGES_PATH=$(python3.6 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())") .. \
 && make install \
 && rm /${OPENCV_VERSION}.zip \
-&& rm -r /opencv-${OPENCV_VERSION}
-
-COPY entrypoint.sh /
-COPY ./main-colors-docker.py /app/
-COPY ./main-colors.py /app/
-COPY ./src /app/src/
-COPY requirements.txt /
-RUN virtualenv -p python3 env && \
-    . env/bin/activate && \
+&& rm -r /opencv-${OPENCV_VERSION} && \
+   virtualenv -p python3 env && \
+   . env/bin/activate && \
     pip install -r requirements.txt
+
+
 ENTRYPOINT ["/entrypoint.sh"]
