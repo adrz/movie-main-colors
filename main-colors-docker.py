@@ -3,9 +3,6 @@
 
 import argparse
 import sys
-from src.movie_colors import (process_movie,
-                              polarchart2,
-                              barchart)
 import subprocess
 import os
 
