@@ -47,7 +47,7 @@ def pca(data, pc_count=None):
 
 
 def variance_of_laplacian(image):
-        # compute the Laplacian of the image and then return the focus
+    # compute the Laplacian of the image and then return the focus
     # measure, which is simply the variance of the Laplacian
     # credit: https://www.pyimagesearch.com/2015/09/07/blur-detection-with-opencv/
     return cv2.Laplacian(image, cv2.CV_64F).var()

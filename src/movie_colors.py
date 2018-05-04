@@ -163,7 +163,7 @@ def polarchart2(cols, prc, blur, output_file, saturate):
     cols_rgb = process_cols(cols, prc, blur, saturate)
     max_pixel = 3840
     max_pixel = 1000
-    r = max_pixel/cols_rgb.shape[0]
+    r = min(1, max_pixel/cols_rgb.shape[0])
     dim = (int(cols_rgb.shape[1]), int(cols_rgb.shape[0]*r))
     cols_rgb = cv2.resize(cols_rgb, dim, interpolation=cv2.INTER_AREA)
     fig, ax = plt.subplots(figsize=(20, 20), subplot_kw=dict(polar=True))
