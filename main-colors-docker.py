@@ -42,18 +42,7 @@ def main(argv):
     path_file = os.path.dirname(args.input_file)
     base_file = os.path.basename(args.input_file)
     subprocess.check_call(['docker', 'build', '-t', 'moviecolors', '.'])
-    list_proc = ['docker', 'run', '--rm',
-                 '-v', '{}:/data'.format(path_file),
-                 '-v', './results:/results',
-                 'moviecolors:latest',
-                 '/data/{}'.format(base_file),
-                 args.alg, args.colorspace,
-                 args.n_colors, args.normalize,
-                 args.blur_xy, args.saturate,
-                 args.type,
-                 '/results/{}'.format(args.output_file)]
-    print(list_proc)
-    subprocess.check_call(['docker', 'run',
+    subprocess.check_call(['docker', 'run', '--rm',
                            '-v', '{}:/data'.format(path_file),
                            '-v', '{}/results:/results'.format(os.getcwd()),
                            'moviecolors:latest',
