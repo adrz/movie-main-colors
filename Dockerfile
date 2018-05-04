@@ -55,8 +55,9 @@ RUN apt-get update && \
   -DPYTHON_PACKAGES_PATH=$(python3.6 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())") .. \
 && make install \
 && rm /${OPENCV_VERSION}.zip \
-&& rm -r /opencv-${OPENCV_VERSION} && \
-   virtualenv -p python3 env && \
+&& rm -r /opencv-${OPENCV_VERSION}
+
+RUN virtualenv -p python3 env && \
    . env/bin/activate && \
     pip install -r requirements.txt
 
