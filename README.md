@@ -16,7 +16,7 @@ I will supposed that OpenCV is properly installed on your machine. It is a painf
 process ! I will not redirect you to any tutorials as those tend to be outdated
 quickly. Good luck.
 
-.. code-block:: bash
+```bash
 	# Debian/Ubuntu
 	$ apt install python-3 python-pip
 	$ pip install --upgrade virtualenv
@@ -26,6 +26,7 @@ quickly. Good luck.
 	$ . env/bin/activate
 	$ pip install -r requirements.txt
 	$ python main-colors.py -i "/home/user/movie.mp4" -o "/home/user/output.png"
+```
 
 ### Docker
 
@@ -33,7 +34,7 @@ First install docker: [see instructions](https://docs.docker.com/install/)
 
 ```bash
 	# Debian/Ubuntu
-	$ python main-colors-docker -i "/home/user/movie.mp3" -o output.png
+	$ python main-colors-docker.py -i "/home/user/movie.mp3" -o output.png
 ```
 
 The result will be output in the movie-main-colors/results/ folder.
