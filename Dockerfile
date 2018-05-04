@@ -1,4 +1,4 @@
-FROM julianbei/alpine-opencv-microimage:latest
+FROM julianbei/alpine-opencv-microimage:p3-3.1
 
 WORKDIR /
 
