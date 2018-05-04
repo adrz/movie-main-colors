@@ -12,6 +12,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.mixture import GaussianMixture
 from functools import partial
 from time import time
+import math
 
 
 # dictionnary to convert between rgb and each colorspaces
@@ -139,6 +140,49 @@ def process_cols(cols_rgb, prc, blur, saturate=1):
     return list_colors
 
 
+def process_cols_2(cols_rgb, prc, blur, saturate=1):
+    def lum(r, g, b):
+        return np.sqrt(.241*r/255 + .691*g/255 + .068*b/255)
+    if saturate > 1:
+        cols_rgb = [increase_saturation(x, ratio=saturate) for x in cols_rgb]
+
+    cols_sort = []
+    prc_sort = []
+    for c, p in zip(cols_rgb, prc):
+        luminance = [lum(*x) for x in c[0]]
+        idx_sort = sorted(range(len(luminance)), key=lambda k: luminance[k])
+        c_sort = np.array([list(c[0][k]) for k in idx_sort])
+        p_sort = np.array([p[k] for k in idx_sort])
+        prc_sort.append(p_sort)
+        cols_sort.append([c_sort])
+
+    prc = prc_sort
+    cols_rgb = cols_sort
+    prc_norm = [np.round(x*100) for x in prc]
+    n_colors = len(prc[0])
+    diff_norm = [i for i, p in enumerate(prc_norm) if np.sum(p) == 9999]
+    for ind in diff_norm:
+        prc_norm[ind][-1] = prc_norm[ind][-1]+1
+    diff_norm = [i for i, p in enumerate(prc_norm) if np.sum(p) == 10001]
+    for ind in diff_norm:
+        prc_norm[ind][0] = prc_norm[ind][0]-1
+
+    list_colors = []
+
+    for p, c in zip(prc_norm, cols_rgb):
+        cn = c[0]
+        cc = [cn[0, :]]*int(p[0])
+        n_colors = len(p)
+        for i in range(1, n_colors):
+            cc += [cn[i, :]]*int(p[i])
+        list_colors.append(cc)
+    list_colors = np.array(list_colors)
+    if blur:
+        list_colors = cv2.blur(list_colors, blur, cv2.BORDER_REPLICATE)
+
+    return list_colors
+
+
 def polarchart2(cols, prc, blur, output_file, saturate):
     def plt_bar(i, cols_rgb, left_outer):
         col_bb = cols_rgb[:, i, :]
@@ -234,6 +278,36 @@ def barchart(cols, prc, blur, output_file, saturate):
                 bbox_inches='tight', edgecolor=None,
                 pad_inches=0, transparent=True)
 
+
+def polar_2_card(x, y, H, h, L, b):
+    x -= .5*H
+    y -= .5*H
+    atan = np.arctan2(y, x)
+    if atan < 0:
+        atan += math.pi
+    x2 = atan*L/2/math.pi
+    if x2 < 0:
+        x2 += math.pi*2
+    y2 = (math.sqrt(x**2 + y**2))*(h)*(2/H)
+    return x2, y2
+
+
+def convert2polar(img, H):
+    arr = np.zeros((img.shape[0], int(img.shape[1]*.15), 3))
+    img = np.hstack((arr, img))
+
+    img_polar = np.zeros((H, H, 3))
+    h, L = img.shape[1], img.shape[0]
+    for x in range(H):
+        for y in range(H):
+            x2, y2 = (int(xy)
+                      for xy in np.round(polar_2_card(
+                              x, y, H, h, L, 2)))
+            if (0 <= x2 < L) & (0 <= y2 < h):
+                img_polar[x, y, :] = img[x2, y2, :]
+    img_polar_cv = np.rot90(img_polar, k=-1)[:, :, ::-1]
+    return img_polar_cv
+# cv2.imwrite('out.png', cv2.cvtColor(img_polar, cv2.COLOR_RGB2BGR))
 
 def process_movie(file_path='', alg='cv',
                   n_clusters=3, output_file='',
