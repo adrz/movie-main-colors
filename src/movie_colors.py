@@ -183,13 +183,21 @@ def process_cols_2(cols_rgb, prc, blur, saturate=1):
     return list_colors
 
 
+def polarchart3(cols, prc, blur, output_file, saturate):
+    cols_rgb = process_cols_2(cols, prc, blur, saturate)
+    img_polar = convert2polar(cols_rgb, 1000)
+    print('output_file: {}'.format(output_file))
+    cv2.imwrite(output_file, img_polar)
+
+
 def polarchart2(cols, prc, blur, output_file, saturate):
     def plt_bar(i, cols_rgb, left_outer):
         col_bb = cols_rgb[:, i, :]
         time_length = cols_rgb.shape[0]
         bot = 25-i
         # hackish way of avoiding aliasing with matplotlib
-        # https://stackoverflow.com/questions/8263769/hide-contour-linestroke-on-pyplot-contourf-to-get-only-fills?noredirect=1&lq=1
+        # https://stackoverflow.com/questions/8263769/hide-contour-linestroke-on-pyplot-contourf-to-get
+        -only-fills?noredirect=1&lq=1
         ax.bar(left=left_outer,
                width=2 * np.pi / time_length, bottom=bot, color=col_bb/255.,
                linewidth=0, alpha=1, antialiased=True, rasterized=True,
@@ -279,7 +287,7 @@ def barchart(cols, prc, blur, output_file, saturate):
                 pad_inches=0, transparent=True)
 
 
-def polar_2_card(x, y, H, h, L, b):
+def polar2cartesian(x, y, H, h, L, b):
     x -= .5*H
     y -= .5*H
     atan = np.arctan2(y, x)
@@ -301,13 +309,14 @@ def convert2polar(img, H):
     for x in range(H):
         for y in range(H):
             x2, y2 = (int(xy)
-                      for xy in np.round(polar_2_card(
+                      for xy in np.round(polar2cartesian(
                               x, y, H, h, L, 2)))
             if (0 <= x2 < L) & (0 <= y2 < h):
                 img_polar[x, y, :] = img[x2, y2, :]
     img_polar_cv = np.rot90(img_polar, k=-1)[:, :, ::-1]
     return img_polar_cv
 # cv2.imwrite('out.png', cv2.cvtColor(img_polar, cv2.COLOR_RGB2BGR))
+
 
 def process_movie(file_path='', alg='cv',
                   n_clusters=3, output_file='',

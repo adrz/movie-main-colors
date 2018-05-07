@@ -4,6 +4,7 @@
 import argparse
 import sys
 from src.movie_colors import (process_movie,
+                              polarchart3,
                               polarchart2,
                               barchart)
 import argcomplete
@@ -53,6 +54,10 @@ def main(argv):
 
     if args.type == 'polar':
         polarchart2(cols=cols, prc=prc,
+                    blur=blur, output_file=args.output_file,
+                    saturate=args.saturate)
+    if args.type == 'polar2':
+        polarchart3(cols=cols, prc=prc,
                     blur=blur, output_file=args.output_file,
                     saturate=args.saturate)
     elif args.type == 'bar':
