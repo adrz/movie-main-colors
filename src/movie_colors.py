@@ -368,17 +368,20 @@ def process_movie(file_path='', alg='cv',
                 continue
 
         # find out the opencv kmeans implementation is the fastest
-        if alg == 'cv':
-            centers, prc = get_kmeans_cv_prc(img, n_clusters)
-        elif alg == 'sklearn':
-            centers, prc = get_kmeans_prc(img, n_clusters)
-        elif alg == 'gaussian':
-            centers, prc = get_gaussian(img, n_clusters)
-        print(cnt_total/n_imgs*100)
-        if normalize:
-            centers = scaler.inverse_transform(centers)
-        list_centers.append(centers)
-        list_prc.append(prc)
+        try:
+            if alg == 'cv':
+                centers, prc = get_kmeans_cv_prc(img, n_clusters)
+            elif alg == 'sklearn':
+                centers, prc = get_kmeans_prc(img, n_clusters)
+            elif alg == 'gaussian':
+                centers, prc = get_gaussian(img, n_clusters)
+                print(cnt_total/n_imgs*100)
+            if normalize:
+                centers = scaler.inverse_transform(centers)
+            list_centers.append(centers)
+            list_prc.append(prc)
+        except:
+            continue
 
     list_centers = [color_to_rgb(x, colorspace) for x in list_centers]
     cap.release()
