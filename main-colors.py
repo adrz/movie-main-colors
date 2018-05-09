@@ -62,7 +62,7 @@ def main(argv):
                     blur=blur, output_file=args.output_file,
                     saturate=args.saturate)
     elif args.type == 'bar':
-        barchart(cols_rgb=cols, prc=prc,
+        barchart(cols=cols, prc=prc,
                  blur=blur, output_file=args.output_file,
                  saturate=args.saturate)
 

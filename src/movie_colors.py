@@ -35,7 +35,7 @@ def get_kmeans_prc(img, n_clusters=3, n_jobs=8):
     order_col = order_col[::-1]
     cnt = cnt[order_col]/np.sum(cnt)*100
     cols = model.cluster_centers_[order_col, :]
-    return (cols, cant)
+    return (cols, cnt)
 
 
 def get_kmeans(img, n_clusters=3, n_jobs=8):
@@ -160,6 +160,9 @@ def process_cols_2(cols_rgb, prc, blur, saturate=1):
     cols_rgb = cols_sort
     prc_norm = [np.round(x*100) for x in prc]
     n_colors = len(prc[0])
+    diff_norm = [i for i, p in enumerate(prc_norm) if np.sum(p) == 9998]
+    for ind in diff_norm:
+        prc_norm[ind][-1] = prc_norm[ind][-1]+2
     diff_norm = [i for i, p in enumerate(prc_norm) if np.sum(p) == 9999]
     for ind in diff_norm:
         prc_norm[ind][-1] = prc_norm[ind][-1]+1
@@ -185,9 +188,22 @@ def process_cols_2(cols_rgb, prc, blur, saturate=1):
 
 def polarchart3(cols, prc, blur, output_file, saturate):
     cols_rgb = process_cols_2(cols, prc, blur, saturate)
-    img_polar = convert2polar(cols_rgb, 1000)
+    img_polar = convert2polar(cols_rgb, 500)
     print('output_file: {}'.format(output_file))
     cv2.imwrite(output_file, img_polar)
+
+
+def barchart(cols, prc, blur, output_file, saturate):
+    cols_rgb = process_cols_2(cols, prc, blur, saturate)
+    print('output_file: {}'.format(output_file))
+    print('shape[0]: {}, shape[1]: {}'.format(
+        cols_rgb.shape[0], cols_rgb.shape[1]))
+    dim = (int(4000/2), int(4000))
+    img = cv2.resize(cols_rgb, dim, interpolation=cv2.INTER_AREA)
+    # img = np.rot90(img, k=-1)
+    img = np.rot90(img, k=1)
+
+    cv2.imwrite(output_file, img[:, :, ::-1])
 
 
 def polarchart2(cols, prc, blur, output_file, saturate):
@@ -230,72 +246,19 @@ def polarchart2(cols, prc, blur, output_file, saturate):
     _ = list(map(partial_plt_bar, range(20)))
     print(time()-t)
     ax.set_axis_off()
-    # ax.set_rasterized(True)
-    # ax.set_rasterization_zorder(0)
     plt.savefig(output_file,
                 bbox_inches='tight', transparent=True)
-
-
-def polarchart(cols_rgb, prc, blur=True):
-    """  polarchart for main colors in movie """
-    prc_norm = [np.round(x/5) for x in prc]
-    n_colors = len(prc[0])
-    diff_norm = [i for i, p in enumerate(prc_norm) if np.sum(p) == 19]
-    for ind in diff_norm:
-        prc_norm[ind][-1] = prc_norm[ind][-1]+1
-    diff_norm = [i for i, p in enumerate(prc_norm) if np.sum(p) == 21]
-    for ind in diff_norm:
-        prc_norm[ind][0] = prc_norm[ind][0]-1
-
-    list_colors = []
-
-    for p, c in zip(prc_norm, cols_rgb):
-        cn = c[0]
-        cc = [cn[0, :]]*int(p[0])
-        n_colors = len(p)
-        for i in range(1, n_colors):
-            cc += [cn[i, :]]*int(p[i])
-        list_colors.append(cc)
-    list_colors = np.array(list_colors)
-
-    len_time = len(list_colors)
-
-    for i in range(20):
-        radius = 1-.04*i
-        c = list(list_colors[:, i, :])
-        make_pie([1]*len_time, c, radius=radius)
-
-    # central white pie
-    make_pie([1], [(255, 255, 255)], radius=1-.04*20)
-
-
-def barchart(cols, prc, blur, output_file, saturate):
-    """ Barchart for main colors in movie """
-
-    img = process_cols(cols, prc, blur, saturate)
-    dim = (int(img.shape[0]*.2), int(img.shape[0]))
-    img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
-    img = cv2.transpose(img)
-    plt.imshow(img)
-    a = plt.gcf().gca()
-    a.set_frame_on(False)
-    a.set_xticks([])
-    a.set_yticks([])
-    plt.axis('off')
-    plt.savefig(output_file, dpi=500,
-                bbox_inches='tight', edgecolor=None,
-                pad_inches=0, transparent=True)
 
 
 def polar2cartesian(x, y, H, h, L, b):
     x -= .5*H
     y -= .5*H
-    atan = np.arctan2(y, x)
+    atan = -math.pi + np.arctan2(x, y)
     if atan < 0:
-        atan += math.pi
+        atan += 2*math.pi
     x2 = atan*L/2/math.pi
-    if x2 < 0:
-        x2 += math.pi*2
+    # if x2 < 0:
+    #     x2 += math.pi*2
     y2 = (math.sqrt(x**2 + y**2))*(h)*(2/H)
     return x2, y2
 
@@ -316,6 +279,29 @@ def convert2polar(img, H):
     img_polar_cv = np.rot90(img_polar, k=-1)[:, :, ::-1]
     return img_polar_cv
 # cv2.imwrite('out.png', cv2.cvtColor(img_polar, cv2.COLOR_RGB2BGR))
+
+
+def autocrop(image, threshold=0):
+    """Crops any edges below or equal to threshold
+
+    Crops blank image to 1x1.
+
+    Returns cropped image.
+    """
+    if len(image.shape) == 3:
+        flatImage = np.max(image, 2)
+    else:
+        flatImage = image
+    assert len(flatImage.shape) == 2
+
+    rows = np.where(np.max(flatImage, 0) > threshold)[0]
+    if rows.size:
+        cols = np.where(np.max(flatImage, 1) > threshold)[0]
+        image = image[cols[0]: cols[-1] + 1, rows[0]: rows[-1] + 1]
+    else:
+        image = image[:1, :1]
+
+    return image
 
 
 def process_movie(file_path='', alg='cv',
@@ -343,11 +329,19 @@ def process_movie(file_path='', alg='cv',
     list_centers = []
     list_prc = []
     scaler = StandardScaler()
-
     # capture 1 out of 10 frame and processed it
     while cap.isOpened():
         while cnt % 10:
             success, img = cap.read()
+            if not success:
+                break
+            else:
+                dim = (int(img.shape[1]*r), int(img.shape[0] * r))
+                img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+                img = autocrop(img)
+                if len(img) == 0:
+                    success = False
+                    break
             cnt += 1
             cnt_total += 1
         cnt = 1
@@ -361,16 +355,17 @@ def process_movie(file_path='', alg='cv',
             break
 
         # flatten the image tensor into a 2D matrix (n_pixels x 3)
-        dim = (int(img.shape[1]*r), int(img.shape[0] * r))
-        img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
         img = img.reshape(img.shape[0]*img.shape[1], img.shape[2])
 
         # kmeans assumes that the data are a distributed as a mixture
         # of gaussian with covariance proportional to diagonal matrices
         # scaling it often help with this assumption
         if normalize:
-            scaler.fit(img)
-            img = scaler.transform(img)
+            try:
+                scaler.fit(img)
+                img = scaler.transform(img)
+            except:
+                continue
 
         # find out the opencv kmeans implementation is the fastest
         if alg == 'cv':
