@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/USSR/bin/env python
 # -*- coding: utf-8 -*-
 
 
@@ -35,7 +35,7 @@ def get_kmeans_prc(img, n_clusters=3, n_jobs=8):
     order_col = order_col[::-1]
     cnt = cnt[order_col]/np.sum(cnt)*100
     cols = model.cluster_centers_[order_col, :]
-    return (cols, cnt)
+    return (cols, cant)
 
 
 def get_kmeans(img, n_clusters=3, n_jobs=8):
@@ -197,7 +197,7 @@ def polarchart2(cols, prc, blur, output_file, saturate):
         bot = 25-i
         # hackish way of avoiding aliasing with matplotlib
         # https://stackoverflow.com/questions/8263769/hide-contour-linestroke-on-pyplot-contourf-to-get
-        -only-fills?noredirect=1&lq=1
+        # -only-fills?noredirect=1&lq=1
         ax.bar(left=left_outer,
                width=2 * np.pi / time_length, bottom=bot, color=col_bb/255.,
                linewidth=0, alpha=1, antialiased=True, rasterized=True,
