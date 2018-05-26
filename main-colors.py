@@ -32,6 +32,9 @@ def main(argv):
     parser.add_argument('-s', '--saturate', type=float,
                         help='',
                         default=1)
+    parser.add_argument('-r', '--resolution', type=int,
+                        help='resolution of the output in pixel',
+                        default=3000)
     parser.add_argument('-t', '--type',
                         help='polar or bar',
                         default='polar')
@@ -54,17 +57,15 @@ def main(argv):
         blur = False
 
     if args.type == 'polar':
-        polarchart2(cols=cols, prc=prc,
-                    blur=blur, output_file=args.output_file,
-                    saturate=args.saturate)
-    if args.type == 'polar2':
         polarchart3(cols=cols, prc=prc,
                     blur=blur, output_file=args.output_file,
-                    saturate=args.saturate)
+                    saturate=args.saturate,
+                    resolution=args.resolution)
     elif args.type == 'bar':
         barchart(cols=cols, prc=prc,
                  blur=blur, output_file=args.output_file,
-                 saturate=args.saturate)
+                 saturate=args.saturate,
+                 resolution=args.resolution)
 
 
 if __name__ == "__main__":

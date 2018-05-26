@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-import matplotlib
-matplotlib.use('Agg')
 import cv2
 import numpy as np
 from sklearn.cluster import KMeans
@@ -140,6 +138,16 @@ def process_cols(cols_rgb, prc, blur, saturate=1):
     return list_colors
 
 
+def round_series_retain_integer_sum(xs, digit=0):
+    new_numbers = list()
+    rest = 0.0
+    for n in xs:
+        new_n = round(n + rest, digit)
+        rest += n - new_n
+        new_numbers.append(new_n)
+    return new_numbers
+
+
 def process_cols_2(cols_rgb, prc, blur, saturate=1):
     def lum(r, g, b):
         return np.sqrt(.241*r/255 + .691*g/255 + .068*b/255)
@@ -158,18 +166,17 @@ def process_cols_2(cols_rgb, prc, blur, saturate=1):
 
     prc = prc_sort
     cols_rgb = cols_sort
-    prc_norm = [np.round(x*100) for x in prc]
+    import pickle
+    pickle.dump({'prc': prc, 'cols_rgb': cols_rgb},
+                open('test.pkl', 'wb'))
+    # let's be sure that sum(x) = 100 for all x in prc
+    prc = [x/sum(x)*100 for x in prc]
+    # hackish because
+    # sum(x) is not necessary equal to sum(round(x))
+    # prc_norm = [np.round(x*100) for x in prc]
+    prc_norm = [round_series_retain_integer_sum(x*100)
+                for x in prc]
     n_colors = len(prc[0])
-    diff_norm = [i for i, p in enumerate(prc_norm) if np.sum(p) == 9998]
-    for ind in diff_norm:
-        prc_norm[ind][-1] = prc_norm[ind][-1]+2
-    diff_norm = [i for i, p in enumerate(prc_norm) if np.sum(p) == 9999]
-    for ind in diff_norm:
-        prc_norm[ind][-1] = prc_norm[ind][-1]+1
-    diff_norm = [i for i, p in enumerate(prc_norm) if np.sum(p) == 10001]
-    for ind in diff_norm:
-        prc_norm[ind][0] = prc_norm[ind][0]-1
-
     list_colors = []
 
     for p, c in zip(prc_norm, cols_rgb):
@@ -186,21 +193,20 @@ def process_cols_2(cols_rgb, prc, blur, saturate=1):
     return list_colors
 
 
-def polarchart3(cols, prc, blur, output_file, saturate):
+def polarchart3(cols, prc, blur, output_file, saturate, resolution):
     cols_rgb = process_cols_2(cols, prc, blur, saturate)
-    img_polar = convert2polar(cols_rgb, 500)
+    img_polar = convert2polar(cols_rgb, resolution)
     print('output_file: {}'.format(output_file))
     cv2.imwrite(output_file, img_polar)
 
 
-def barchart(cols, prc, blur, output_file, saturate):
+def barchart(cols, prc, blur, output_file, saturate, resolution):
     cols_rgb = process_cols_2(cols, prc, blur, saturate)
     print('output_file: {}'.format(output_file))
     print('shape[0]: {}, shape[1]: {}'.format(
         cols_rgb.shape[0], cols_rgb.shape[1]))
-    dim = (int(4000/2), int(4000))
+    dim = (int(resolution/2), int(resolution))
     img = cv2.resize(cols_rgb, dim, interpolation=cv2.INTER_AREA)
-    # img = np.rot90(img, k=-1)
     img = np.rot90(img, k=1)
 
     cv2.imwrite(output_file, img[:, :, ::-1])

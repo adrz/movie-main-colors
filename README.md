@@ -2,12 +2,13 @@
 
 ## Overview
 
-This project aims to extract the main colors of each frame of a movie. It is based on a Kmeans
-clustering of color. [This blog
-post](http://www.alanzucconi.com/2015/05/24/how-to-find-the-main-colours-in-an-image/) do
+This project aims to extract the main colors of each frame of a movie based on a Kmeans
+clustering of color. [Alan
+Zucconi](http://www.alanzucconi.com/2015/05/24/how-to-find-the-main-colours-in-an-image/)
+does 
 a great job explaining the process.
 
-Lab colorspace has been used as it is supposed to be more [perceptually uniform](https://en.wikipedia.org/wiki/Color_difference#Tolerance).
+Let us notice that the lab colorspace might give better results as it is supposed to be more [perceptually uniform](https://en.wikipedia.org/wiki/Color_difference#Tolerance).
 
 ## Dependencies
 
@@ -22,9 +23,9 @@ polar plot for a movie of 1h30 on an intel 7700k.
 
 ### Good old local install
 
-I will supposed that OpenCV is properly installed on your machine. It is a painful
+I will supposed that OpenCV is properly installed on your machine. I admit it is a painful
 process ! I will not redirect you to any tutorials as those tend to be outdated
-quickly. Good luck.
+quickly, so good luck. Once OpenCV installed the following set of command will do the trick:
 
 ```bash
 	# Debian/Ubuntu
@@ -40,14 +41,16 @@ quickly. Good luck.
 
 ### Docker
 
-First install docker: [see instructions](https://docs.docker.com/install/)
+In case you are not a linux wizard, I recommend you to go with docker.
+First install docker: [see instructions](https://docs.docker.com/install/), then to
+generate a polar plot of the movie 'movie.mp4':
 
 ```bash
 	# Debian/Ubuntu
-	$ python main-colors-docker.py -i "/home/user/movie.mp3" -o output.png
+	$ python main-colors-docker.py -i "/home/user/movie.mp4" -o output.png
 ```
 
-The result will be output in the movie-main-colors/results/ folder.
+The result will be output in the folder: 'movie-main-colors/results/'.
 
 ## Parameters/Options
 
@@ -78,16 +81,6 @@ Several movie colors extractors exist in the wild. Most of them produces a horiz
 vertical ''barcode'' produced by a concatenation of the average color of individual
 frames. It is often less computationally intensive and rely on *ffmpeg*: [movie barcodes
 generator](https://github.com/timbennett/movie-barcodes/). You could even buy a poster of
-your favorite movie [thecolorinmotion.com](https://thecolorsofmotion.com/films)
-
-
-http://www.alanzucconi.com/2015/05/24/how-to-find-the-main-colours-in-an-image/
-https://www.pyimagesearch.com/2014/05/26/opencv-python-k-means-color-clustering/
-
-https://www.studiobinder.com/blog/how-to-use-color-in-film-50-examples-of-movie-color-palettes/
+your favorite movie [thecolorinmotion.com](https://thecolorsofmotion.com/films).
 The most impressive work is by far a bachelor graduation project called
 [cinemetrics](http://cinemetrics.fredericbrodbeck.de/).
-
- convert df.png -color-matrix '  1.2 -0.1 -0.1
->                                 -0.1  1.2 -0.1
->                                 -0.1 -0.1  1.2 ' dd.png

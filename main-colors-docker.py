@@ -29,6 +29,9 @@ def main(argv):
     parser.add_argument('-s', '--saturate',
                         help='',
                         default="1")
+    parser.add_argument('-r', '--resolution', type=int,
+                        help='resolution of the output in pixel',
+                        default=3000)
     parser.add_argument('-t', '--type',
                         help='polar or bar',
                         default='polar')
@@ -47,6 +50,7 @@ def main(argv):
                            args.alg, args.colorspace,
                            args.n_colors, args.normalize,
                            args.blur_xy, args.saturate,
+                           args.resolution,
                            args.type,
                            '/results/{}'.format(args.output_file)])
 
